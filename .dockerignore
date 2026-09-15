@@ -1,0 +1,16 @@
+.git
+.venv
+.pytest_cache
+.ruff_cache
+__pycache__
+*.egg-info
+remote-demo
+docs/_build
+ui/node_modules
+ui/dist
+ui/tsconfig.tsbuildinfo
+pypi-stubs
+tests
+dist
+build
+.mcp.json

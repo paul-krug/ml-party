@@ -1,0 +1,23 @@
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# ml-party local stores (never commit a store)
+.mlparty/
+*.mlparty/
+
+# ui
+node_modules/
+ui/dist/
+
+# editors / os
+.vscode/
+.idea/
+.DS_Store
+docs/_build/

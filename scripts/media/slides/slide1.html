@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="base.css"></head><body>
+<div class="brand">ml-<span>party</span></div>
+<div class="stage"><div>
+  <div class="card mono" style="width:640px;padding:22px 26px;font-size:16px">
+    <div style="color:#5f6a78;margin-bottom:10px">● ● ●</div>
+    <div><span class="dim">$</span> <span id="cmd"></span><span id="caret">▌</span></div>
+    <div class="rise" style="animation-delay:1.6s"><span class="green">✓</span> store created at <b>.mlparty</b></div>
+    <div class="rise" style="animation-delay:2.2s"><span class="green">✓</span> MCP server registered in <b>./.mcp.json</b> — agents pick it up automatically</div>
+    <div class="rise" style="animation-delay:2.8s"><span class="green">✓</span> self-teaching: the server ships its own workflow instructions</div>
+  </div>
+  <div class="rise" style="animation-delay:3.6s;text-align:center;margin-top:26px;font-size:17px;color:#9aa2ad">
+    Claude Code&nbsp;&nbsp;·&nbsp;&nbsp;Cursor&nbsp;&nbsp;·&nbsp;&nbsp;Gemini CLI&nbsp;&nbsp;·&nbsp;&nbsp;any MCP client
+  </div>
+</div></div>
+<div class="headline">Connect any AI agent via MCP
+  <small>one command — the server teaches agents its whole workflow</small></div>
+<script>
+const cmd = "mlp init", el = document.getElementById("cmd");
+let i = 0;
+const t = setInterval(() => { el.textContent = cmd.slice(0, ++i);
+  if (i >= cmd.length) { clearInterval(t);
+    setTimeout(() => document.getElementById("caret").style.opacity = 0, 700); } }, 90);
+</script></body></html>

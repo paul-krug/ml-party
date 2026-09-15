@@ -1,0 +1,31 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="base.css">
+<style>
+.bubble { max-width: 680px; padding: 14px 20px; border-radius: 14px;
+          font-size: 16.5px; margin: 10px 0; }
+.user { background: #1d3050; border: 1px solid #2c4a7c; margin-left: auto;
+        border-bottom-right-radius: 4px; }
+.agent { background: #171c23; border: 1px solid #262c35;
+         border-bottom-left-radius: 4px; }
+.who { font-size: 12.5px; color: #7d8794; margin: 2px 6px; }
+</style></head><body>
+<div class="brand">ml-<span>party</span></div>
+<div class="stage"><div style="width:780px">
+  <div class="who" style="text-align:right">you — weeks later</div>
+  <div class="bubble user rise" style="animation-delay:.3s">
+    Which recipe won the sweep, and why?</div>
+  <div class="who" style="margin-top:14px">agent</div>
+  <div class="bubble agent rise" style="animation-delay:1.3s">
+    <span class="chip ok">graph_query</span><span class="chip ok rise" style="animation-delay:1.9s">node_get</span>
+    <div class="rise" style="animation-delay:2.6s;margin-top:8px">
+      <b>resnet18 + cosine lr</b> — 93.9% val_acc, <span class="green">+2.1pt over the baseline</span>
+      at identical budget.</div>
+    <div class="rise" style="animation-delay:3.6s;margin-top:6px">
+      Heavy augmentation was <b style="color:#d47f7f">refuted</b>: it underfits at 48 epochs.</div>
+    <div class="rise mono dim" style="animation-delay:4.5s;font-size:14px;margin-top:8px">
+      reproduce: python train.py --config configs/resnet18-cosine.yaml --seed 7</div>
+  </div>
+</div></div>
+<div class="headline">Ask anything about your runs — the agent knows
+  <small>answers come from the knowledge graph, not from memory</small></div>
+</body></html>

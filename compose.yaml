@@ -1,0 +1,42 @@
+# ml-party server deployment. Two modes:
+#
+#   docker compose up -d
+#     → server on 127.0.0.1:7327 (localhost only; reach it via SSH tunnel)
+#
+#   DOMAIN=tracker.example.org docker compose --profile tls up -d
+#     → Caddy terminates HTTPS with automatic Let's Encrypt certificates
+#       and proxies to the server; ports 80/443 public, 7327 not exposed.
+#
+# Set ML_PARTY_TOKEN in the environment or an .env file next to this file.
+# Full guidance (incl. the trusted-network rule until R6 auth): docs/deploy.md
+
+services:
+  server:
+    build: .
+    # image: ml-party  # once built/pulled
+    restart: unless-stopped
+    environment:
+      ML_PARTY_TOKEN: ${ML_PARTY_TOKEN:?set ML_PARTY_TOKEN}
+    volumes:
+      - mlparty-data:/data
+    ports:
+      - "127.0.0.1:7327:7327"
+
+  caddy:
+    image: caddy:2
+    profiles: [tls]
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN for the tls profile}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  mlparty-data:
+  caddy-data:
+  caddy-config:

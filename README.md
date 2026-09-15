@@ -1,0 +1,146 @@
+<p align="center">
+  <img src=".github/media/logo.png" alt="ml-party" width="460">
+</p>
+
+<p align="center">
+  <a href="https://github.com/paul-krug/ml-party/actions/workflows/ci.yml"><img
+    src="https://github.com/paul-krug/ml-party/actions/workflows/ci.yml/badge.svg"
+    alt="ci"></a>
+</p>
+
+![ml-party in 40 seconds: connect an agent over MCP, let it track a sweep, watch the dashboard live, ask questions weeks later](.github/media/mlparty.gif)
+
+**An agent-native platform for ML experiment tracking and lineage/knowledge.**
+
+Every existing tracker is human-dashboard-first: great at scalars-over-time,
+silent about *why* a run exists and *how it relates* to the others. ml-party
+treats a run's **abstract, typed relationships, and reproducibility contract
+as first-class data** — a durable, queryable lab notebook that agents write
+(over MCP) and query, and that humans read live (CLI + web viewer). It is
+also a full local tracker: metrics, artifacts, checkpoints, all stored
+locally; mirroring to W&B/MLflow is a future optional adapter, not the
+product.
+
+Core ideas:
+
+- **The write contract is the product.** `run_start` pre-registers intent
+  (title, purpose, hypothesis, full parameters) and auto-captures the repro
+  tuple (source snapshot, env lock, invocation, hardware, outer-git
+  provenance). `run_finalize` refuses without method + result/verdict +
+  reproduce — refusals are machine-readable `{missing, invalid}`. Failures
+  are knowledge (`run_fail`); silent deaths become `abandoned`.
+- **Internal git per experiment.** Every run snapshots the actually-running
+  source (allowlisted, size-capped, secrets denied) as a commit in a bare
+  internal repo. A run *references* a commit — a launch-arg sweep is many
+  runs on one commit, distinguished by mandatory `parameters`. Declared
+  `derives_from` lineage becomes the commit's parent; every run gets its own
+  ref (no races).
+- **A knowledge graph over it.** Typed nodes (`project / experiment / run /
+  note`), a controlled edge vocabulary (`derives-from`, `supersedes`,
+  `refutes`, …), hybrid BM25(+optional embeddings)+graph retrieval that
+  downranks superseded/refuted beliefs. Knowledge is append-only; correction
+  is an edge.
+- **Boards: agents author whole views.** An agent logs a self-contained
+  HTML page as an artifact and the UI renders it sandboxed — comparison
+  dashboards, demo galleries, live reports that fetch current data from the
+  read-only API at view time ([docs/boards.md](docs/boards.md)).
+- **Run control through registered templates.** Users register shell
+  templates with typed placeholders — the allowlist; agents invoke them
+  with validated, shell-quoted *values* (never commands), and every
+  invocation is recorded in the graph, edged to the run it controlled.
+  Restart is never a mutation: a new run, `derives-from` the old
+  ([docs/actions.md](docs/actions.md)).
+- **Local-first, remote-ready.** Writers always write a local spool store;
+  spool-and-flush sync ships runs to a served store over three idempotent
+  streams ([docs/remote.md](docs/remote.md)). Multi-user auth (roles,
+  per-user tokens, UI login) activates with the first `mlp user add`
+  ([docs/deploy.md](docs/deploy.md)).
+
+## Quickstart
+
+**Requirements:** Linux or macOS (Windows via WSL — the store relies on
+POSIX file locking), Python ≥ 3.11, and Node ≥ 20 for the one-time web-UI
+build.
+
+```bash
+git clone https://github.com/paul-krug/ml-party && cd ml-party
+python -m venv .venv && .venv/bin/pip install -e .
+(cd ui && npm install && npm run build)     # web UI bundle, once
+
+.venv/bin/mlp init --root .mlparty          # create a store (+ MCP registration)
+.venv/bin/python scripts/demo_live_run.py & # a real run: contract + live metrics
+.venv/bin/mlp ui                            # → http://127.0.0.1:7327
+```
+
+Open the browser: the demo run is streaming its loss curve live. It went
+through the full lifecycle a real training does — pre-registered with
+purpose/hypothesis/parameters, source snapshotted, metrics streamed, then
+finalized with a verdict. Click into it: Overview | Metrics | Artifacts |
+Code.
+
+### Let an agent drive it
+
+`mlp init` registered the MCP server in `./.mcp.json`, so agents started in
+this project (Claude Code and compatible clients) pick it up automatically —
+approve it once when asked. The server is **self-teaching**: the full
+tracking workflow rides in its MCP instructions, so *"use ml-party for this
+run"* is all an agent needs to hear. Other setups: `mlp connect` registers
+an existing store into another project; `mlp mcp-config` prints the snippet
+for other MCP clients.
+
+### Instrument a training script
+
+The agent brackets the run over MCP and launches your script with
+`ML_PARTY_STORE`/`ML_PARTY_RUN` set; the script attaches as the second
+writer:
+
+```python
+import mlparty
+
+h = mlparty.attach()                        # env-var handshake (inert without ML_PARTY_RUN)
+h.log_metric("loss", loss, step=step)       # streams to the live view
+h.log_artifact("ckpt/best.pt")
+h.finalize(method=..., result={"summary": ..., "verdict": "confirmed",
+                               "metrics": {"wer": 0.048}},
+           reproduce="python train.py --lr 1e-3")
+# unhandled exceptions auto-fail the run with the traceback
+```
+
+CLI mirror: `mlp status / runs / show <ref> / tail <run> / query "…" /
+diff <a> <b> / janitor / rebuild-index`.
+
+## Web viewer
+
+`mlp ui` serves a read-only SPA: experiments → runs → tabbed run pages with
+live SSE metric dashboards, a finder-style artifact browser (image/audio/
+video viewers, an `.npy`/`.npz` tensor slicer), agent-authored boards, the
+lineage graph, search, and diff. Remote box → tunnel like TensorBoard:
+`ssh -L 7327:localhost:7327 <box>`. For a shared server with logins and
+sync ingest, see [docs/deploy.md](docs/deploy.md) and
+[docs/remote.md](docs/remote.md).
+
+## Design
+
+- [docs/](docs/) — **user guide** (Sphinx site): [tracking runs](docs/tracking.md),
+  [the web UI](docs/ui.md), [boards](docs/boards.md),
+  [run control](docs/actions.md), [MCP setup & tools](docs/mcp.md),
+  [remote tracking](docs/remote.md), [deployment & auth](docs/deploy.md).
+- [DESIGN.md](DESIGN.md) — **the living design document** (ontology,
+  contract, internal-git model, storage, surfaces, remote mode, forward
+  design).
+- [AGENTS.md](AGENTS.md) — conventions for agents/contributors working in
+  this repo (incl. the doc-sync rule). Planning lives in the repo's
+  GitHub Project, not in tracked files.
+
+Layering: pydantic ontology → journal-first store (`journal.jsonl` is the
+source of truth; SQLite/FTS5 is a rebuildable index) → dulwich internal-git
+engine → `MlParty` core API → thin frontends (MCP server, `mlp` CLI,
+in-process client, read-only HTTP+SSE for the viewer).
+
+## Status
+
+Beta (0.x): APIs may still move between minor versions; the store format is
+journal-first and rebuildable, and every release migrates it forward.
+Licensed [Apache-2.0](LICENSE).
+
+Tests: `.venv/bin/python -m pytest tests/ -q`

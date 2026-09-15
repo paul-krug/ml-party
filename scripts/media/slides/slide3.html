@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="base.css"></head><body>
+<div class="brand">ml-<span>party</span></div>
+<div class="stage"><div>
+  <div class="card" style="width:680px;padding:20px 26px">
+    <div class="dim" style="font-size:13px;margin-bottom:10px">
+      run <span class="mono">01M2JV1F…</span> — resnet18 + cosine lr</div>
+    <div class="rise" style="animation-delay:.4s;padding:4px 0"><span class="green">✓</span> source snapshot → internal git commit <span class="mono dim">3f2a91c</span></div>
+    <div class="rise" style="animation-delay:1.0s;padding:4px 0"><span class="green">✓</span> environment lock (pip freeze) → content-addressed store</div>
+    <div class="rise" style="animation-delay:1.6s;padding:4px 0"><span class="green">✓</span> hardware &amp; invocation captured on the compute host</div>
+    <div class="rise" style="animation-delay:2.2s;padding:4px 0"><span class="green">✓</span> metrics streaming — <span class="mono" id="n">0</span> records</div>
+    <div class="rise" style="animation-delay:3.4s;padding:4px 0"><span class="green">✓</span> checkpoint <span class="mono">best.pt</span> → <span class="mono dim">sha256 a621a0…</span></div>
+    <div class="rise" style="animation-delay:4.2s;padding:4px 0"><span class="green">✓</span> finalized: <b class="green">confirmed</b> — val_acc 0.926, reproduce command recorded</div>
+  </div>
+</div></div>
+<div class="headline">The agent logs everything relevant — automatically
+  <small>code, env, hardware, metrics, artifacts, verdict: one reproducible record</small></div>
+<script>
+let n = 0; const el = document.getElementById("n");
+setTimeout(() => { const t = setInterval(() => {
+  n += 37 + Math.floor(Math.random() * 21); el.textContent = n.toLocaleString();
+  if (n > 2300) clearInterval(t); }, 90); }, 2300);
+</script></body></html>

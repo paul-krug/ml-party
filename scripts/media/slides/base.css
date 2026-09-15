@@ -1,0 +1,28 @@
+* { box-sizing: border-box; }
+body { margin: 0; width: 1230px; height: 650px; background: #0f1216; color: #e6e8eb;
+       font: 15px/1.5 system-ui, sans-serif; overflow: hidden; position: relative; }
+.brand { position: absolute; top: 20px; left: 26px; font: 700 19px system-ui; }
+.brand span { color: #5a9cff; }
+.stage { position: absolute; inset: 60px 0 110px 0; display: flex;
+         align-items: center; justify-content: center; }
+.headline { position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%);
+  padding: 13px 26px; background: rgba(9,11,15,.93);
+  border: 1px solid rgba(110,160,255,.4); border-radius: 12px;
+  font: 600 27px/1.25 system-ui; white-space: nowrap; text-align: center;
+  box-shadow: 0 6px 30px rgba(0,0,0,.55); opacity: 0;
+  animation: fadein .5s .4s forwards; }
+.headline small { display: block; font: 400 15px/1.4 system-ui; color: #9aa2ad;
+                  margin-top: 3px; }
+.card { background: #14181e; border: 1px solid #262c35; border-radius: 12px;
+        box-shadow: 0 8px 40px rgba(0,0,0,.4); }
+.rise { opacity: 0; animation: rise .45s forwards; }
+@keyframes fadein { to { opacity: 1 } }
+@keyframes rise { from { opacity: 0; transform: translateY(10px) }
+                  to { opacity: 1; transform: none } }
+.chip { display: inline-block; padding: 3px 12px; border-radius: 9px;
+        font: 500 13.5px/1.5 ui-monospace, monospace; margin: 3px 6px 3px 0;
+        background: #1a2230; color: #8fb8ff; border: 1px solid #2a3a55; }
+.chip.ok::after { content: " ✓"; color: #7fd49a; }
+.mono { font-family: ui-monospace, "SF Mono", monospace; }
+.dim { color: #9aa2ad; }
+.green { color: #7fd49a; }

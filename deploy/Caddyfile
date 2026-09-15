@@ -1,0 +1,6 @@
+# Automatic HTTPS: Caddy obtains and renews Let's Encrypt certificates for
+# $DOMAIN on its own. SSE (live metric streams) passes through unbuffered —
+# Caddy streams responses by default, no extra config needed.
+{$DOMAIN} {
+	reverse_proxy server:7327
+}
