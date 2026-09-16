@@ -63,6 +63,37 @@ jobs:
       - run: npm run build
         working-directory: ui
 
+  # The suite runs against a checkout where ui/dist may not exist, so the
+  # packaged-and-served path — the only one a `pip install` user takes — was
+  # untested. Build the wheel exactly as release.yml does, install it, and
+  # check the SPA and its hashed assets are really served. Both platforms:
+  # the wheel is what a macOS user installs.
+  ui-serving:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: npm ci
+        working-directory: ui
+      - run: npm run build
+        working-directory: ui
+      - run: cp -r ui/dist src/mlparty/ui_dist
+      - run: pip install build && python -m build --wheel
+      - run: pip install dist/*.whl
+      - name: serve the bundled SPA and fetch it
+        run: python scripts/check_ui_serving.py
+
   docs-build:
     runs-on: ubuntu-latest
     steps:
@@ -91,7 +122,7 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:7327/api/ingest/events -H 'Authorization: Bearer ci-smoke-token' -H 'Content-Type: application/json' -d '{"events":[]}')" = "200"
           # UI is served
           curl -sf http://127.0.0.1:7327/ | grep -qi "<!doctype html>"
-          # auth mode (R6): first user flips the server to login-gated reads
+          # multi-user auth: the first user flips the server to login-gated reads
           docker exec mlp sh -c "echo ci-password-1 | mlp user add ci-admin --role admin --password - --root /data"
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:7327/api/nodes)" = "401"
           curl -s -c /tmp/cj -X POST http://127.0.0.1:7327/api/auth/login -H 'Content-Type: application/json' -d '{"username":"ci-admin","password":"ci-password-1"}' | grep -q ci-admin

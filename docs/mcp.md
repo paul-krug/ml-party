@@ -22,6 +22,20 @@ one-time approval. From there, "use ml-party to track this run" is all an
 agent needs to hear. Note: `.mcp.json` carries absolute paths — keep it out
 of git.
 
+**If the server does not show up**, it is almost always one of two things:
+
+1. **The agent was started somewhere else.** A project-scoped `.mcp.json` is
+   read from the directory the agent starts in — not the directory you ran
+   `mlp init` in, if those differ. `cd` to the directory holding `.mcp.json`
+   and start the agent there.
+2. **The approval prompt was never answered.** Project MCP servers need a
+   one-time approval; until then the server stays inactive.
+
+Verify with `/mcp` inside Claude Code (it lists active servers), or
+`claude mcp list` from the shell. To register the store for an agent that
+runs elsewhere, use `mlp connect --project <that directory>`, or paste the
+`mlp mcp-config` snippet into that client's own configuration.
+
 ## Tools (18)
 
 | Tool | Purpose |

@@ -30,6 +30,12 @@ history and pull requests; entries land here when they are release-worthy.
 - `snapshot_report` now records the files that were **included**, not only
   those excluded.
 
+- `mlp init` / `mlp connect` now print where `.mcp.json` was written and how
+  to make it take effect — agents read it from the directory they are
+  *started* in, and need a one-time approval — plus how to verify (`/mcp`,
+  `claude mcp list`). Previously they claimed agents "pick it up
+  automatically", which quietly assumed both.
+
 ### Added
 - `snapshot_preview()` — core API, `snapshot_preview` MCP tool, and
   `mlp snapshot-preview <dir>` — shows what a capture would take without
