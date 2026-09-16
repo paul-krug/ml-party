@@ -32,7 +32,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest", "ruff", "httpx"]
 embed = ["fastembed>=0.3"]
-docs = ["sphinx>=8", "myst-parser>=4", "furo"]
+docs = ["sphinx>=8", "myst-parser>=4", "furo", "sphinx-copybutton"]
 dev-media = ["playwright", "imageio-ffmpeg", "numpy"]
 
 [project.urls]

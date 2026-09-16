@@ -42,9 +42,12 @@ def test_connect_merges_existing_servers(tmp_path):
 
 
 def test_mcp_config_prints_snippet(tmp_path):
+    """stdout stays pure JSON so `mlp mcp-config | jq …` keeps working; the
+    where-to-paste guidance goes to stderr."""
     r = runner.invoke(app, ["mcp-config", "--root", str(tmp_path / "s")])
-    snippet = json.loads(r.output)
+    snippet = json.loads(r.stdout)
     assert snippet["mcpServers"]["ml-party"]["args"][0] == "serve-mcp"
+    assert "MCP configuration" in r.stderr
 
 
 def test_server_is_self_teaching(tmp_path):

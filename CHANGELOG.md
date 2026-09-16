@@ -7,6 +7,30 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+### Added
+- An [install skill](.agents/skills/install-ml-party/SKILL.md) an agent can
+  follow to set ml-party up in someone's project: reuse an existing store
+  rather than fragmenting the graph, put `.mcp.json` where the agent will
+  actually read it, and tell the user to restart the session.
+- Copy buttons on the docs site's code blocks (`sphinx-copybutton`); GitHub
+  already renders them for README code fences.
+
+### Changed
+- Install instructions rewritten around **one store holding many projects**,
+  registered globally, instead of a store per repository — retrieval spans a
+  store, so a store per repo splits the knowledge graph into islands. Two
+  clear paths (let an agent install it, or do it yourself) replace the old
+  single block, and registration is described for any MCP client rather than
+  Claude Code alone. The per-project variant, and when it is worth the
+  trade-off, moved into the [MCP setup
+  guide](https://paul-krug.github.io/ml-party/mcp.html#one-store-or-one-per-project).
+- `mlp mcp-config` explains where to paste its output (on stderr, so the
+  JSON on stdout stays pipeable).
+
+### Fixed
+- `python -m mlparty.demo` honours `ML_PARTY_STORE` like the rest of the
+  CLI, instead of always defaulting to `./.mlparty`.
+
 ## [0.2.3] — 2026-09-16
 
 ### Fixed

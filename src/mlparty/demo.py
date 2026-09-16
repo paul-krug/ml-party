@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import math
+import os
 import time
 
 from .client import start_run
@@ -52,7 +53,8 @@ def run_demo(store: str = ".mlparty", steps: int = 120, sleep: float = 0.25) -> 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--store", default=".mlparty")
+    ap.add_argument("--store", default=os.environ.get("ML_PARTY_STORE", ".mlparty"),
+                    help="store root (default: $ML_PARTY_STORE or ./.mlparty)")
     ap.add_argument("--steps", type=int, default=120)
     ap.add_argument("--sleep", type=float, default=0.25)
     args = ap.parse_args()
