@@ -35,6 +35,12 @@ embed = ["fastembed>=0.3"]
 docs = ["sphinx>=8", "myst-parser>=4", "furo"]
 dev-media = ["playwright", "imageio-ffmpeg", "numpy"]
 
+[project.urls]
+Homepage = "https://github.com/paul-krug/ml-party"
+Documentation = "https://paul-krug.github.io/ml-party/"
+Issues = "https://github.com/paul-krug/ml-party/issues"
+Changelog = "https://github.com/paul-krug/ml-party/blob/main/CHANGELOG.md"
+
 [project.scripts]
 mlp = "mlparty.cli:app"
 

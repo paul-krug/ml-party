@@ -7,16 +7,15 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
-### Added
-- `SECURITY.md` (trust model, disclosure, the agent-instruction and
-  prompt-injection surfaces) and login rate-limiting: repeated failed
-  logins per username+IP back off exponentially (HTTP 429 with
-  Retry-After). The MCP workflow now tells agents to treat retrieved
-  knowledge as data, never as instructions.
-
-## [0.2.0] — first public release
+## [0.2.0] — 2026-09-16, first public release
 
 Everything ml-party ships with:
+
+- **Security posture**: `SECURITY.md` (trust model, disclosure, the
+  agent-instruction and prompt-injection surfaces) and login
+  rate-limiting: repeated failed logins per username+IP back off
+  exponentially (HTTP 429 with Retry-After). The MCP workflow tells
+  agents to treat retrieved knowledge as data, never as instructions.
 
 - **Local-first tracking store**: append-only journal as the source of
   truth with a rebuildable SQLite/FTS5 index; per-run metric journals;

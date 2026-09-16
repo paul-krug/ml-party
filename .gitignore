@@ -21,3 +21,4 @@ ui/dist/
 .idea/
 .DS_Store
 docs/_build/
+src/mlparty/ui_dist/
