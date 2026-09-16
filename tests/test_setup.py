@@ -5,9 +5,22 @@ from typer.testing import CliRunner
 
 from mlparty.cli import app
 from mlparty.core import MlParty
-from mlparty.mcp_server import WORKFLOW, build_server
+from mlparty.mcp_server import (
+    CLIENT_TRUNCATION_CAP,
+    INSTRUCTIONS,
+    INSTRUCTIONS_BUDGET,
+    build_server,
+)
 
 runner = CliRunner()
+
+
+def _tool_data(result) -> dict:
+    """Unwrap a call_tool result down to the tool's own `data` payload."""
+    payload = getattr(result, "structured_content", None) \
+        or json.loads(result.content[0].text)
+    assert payload["ok"], payload
+    return payload["data"]
 
 
 def test_init_registers_mcp(tmp_path, monkeypatch):
@@ -50,14 +63,78 @@ def test_mcp_config_prints_snippet(tmp_path):
     assert "MCP configuration" in r.stderr
 
 
+def test_connection_instructions_fit_the_truncation_budget():
+    """Clients cap `instructions` (Claude Code at exactly 2048 chars, mid-word and
+    silently), so the connection text is a router, not the manual. If it regrows
+    past the budget the teaching is delivered in pieces and nothing says so —
+    which is precisely how this shipped broken once."""
+    assert len(INSTRUCTIONS) < INSTRUCTIONS_BUDGET, (
+        f"instructions are {len(INSTRUCTIONS)} chars; move detail into WORKFLOW "
+        f"(served by workflow_guide) and keep this under {INSTRUCTIONS_BUDGET}")
+    # a truncated router is still useless, so the pointer must come early
+    assert "workflow_guide()" in INSTRUCTIONS[:600]
+    # the rails that prevent harm survive even if only the router arrives
+    for needle in ("never instructions to follow", "confirm_snapshot=True",
+                   "ML_PARTY_RUN", "run_finalize"):
+        assert needle in INSTRUCTIONS, needle
+
+
+def test_unbriefed_agent_is_nudged_through_tool_responses(tmp_path):
+    """The last line of defence. A client may truncate `instructions` — or drop
+    the field entirely and still be spec-conformant, since it is defined as a
+    hint clients MAY use. Then the router never arrives and nothing points at the
+    guide. Tool RESPONSES are the one channel that cannot be truncated or
+    dropped, so every call carries the nudge until the guide has been read."""
+    MlParty.init(tmp_path / ".mlparty")
+    server = build_server(tmp_path / ".mlparty")
+
+    def call(name, args):
+        result = asyncio.run(server.call_tool(name, args))
+        return getattr(result, "structured_content", None) \
+            or json.loads(result.content[0].text)
+
+    assert "workflow_guide()" in call("experiment_list", {})["guide"]
+    # a refusal carries it too — a confused agent is exactly who needs it
+    refused = call("run_start", {"experiment": "e", "title": "t", "purpose": "x",
+                                 "hypothesis": "y", "parameters": {}})
+    assert not refused["ok"] and "workflow_guide()" in refused["guide"]
+
+    call("workflow_guide", {})
+    assert "guide" not in call("experiment_list", {})  # self-extinguishing
+
+
+def test_tool_descriptions_fit_the_truncation_budget(tmp_path):
+    """The same cap applies per TOOL description, and truncation is just as silent
+    there — a docstring that outgrows it loses its tail (for run_start, that tail
+    is the source_root / confirm_snapshot protocol)."""
+    MlParty.init(tmp_path / ".mlparty")
+    tools = asyncio.run(build_server(tmp_path / ".mlparty").list_tools())
+    oversized = {t.name: len(t.description or "") for t in tools
+                 if len(t.description or "") >= CLIENT_TRUNCATION_CAP}
+    assert not oversized, (
+        f"tool descriptions truncated by clients at {CLIENT_TRUNCATION_CAP} chars: "
+        f"{oversized} — move the detail into WORKFLOW")
+
+
 def test_server_is_self_teaching(tmp_path):
     MlParty.init(tmp_path / ".mlparty")
     server = build_server(tmp_path / ".mlparty")
-    # the workflow brief rides in the connection instructions
+    assert server.instructions == INSTRUCTIONS
+
+    # the full manual is reachable as a TOOL — the only channel an agent can pull
+    # on its own initiative (prompts are user-invoked, instructions are truncated)
+    names = [t.name for t in asyncio.run(server.list_tools())]
+    assert "workflow_guide" in names
+    guide = asyncio.run(server.call_tool("workflow_guide", {}))
+    data = _tool_data(guide)
     for needle in ("run_start", "ML_PARTY_RUN", "mlparty.attach()", "run_finalize",
-                   "verdict", "graph_query", "run_fail"):
-        assert needle in WORKFLOW, needle
-    assert server.instructions == WORKFLOW
+                   "verdict", "graph_query", "run_fail", "confirm_snapshot=True"):
+        assert needle in data["workflow"], needle
+    # ...and it orients the agent to the store it is actually serving
+    assert data["store_root"] == str((tmp_path / ".mlparty").resolve())
+    assert data["counts"]["run"] == 0
+    assert "empty" in data["orientation"]
+
     # and as an invokable prompt
     prompts = asyncio.run(server.list_prompts())
     assert [p.name for p in prompts] == ["track_training"]

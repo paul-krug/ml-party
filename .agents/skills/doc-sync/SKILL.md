@@ -42,7 +42,7 @@ commands/flags**, **HTTP endpoints**, **install or run instructions**,
 | Security | `SECURITY.md` | trust model, new attack surface, known-limitations list |
 | Agent guide | `AGENTS.md` | runbook commands, conventions, gotchas, doc map |
 | Changelog | `CHANGELOG.md` | a line under `[Unreleased]` if the change is user-visible |
-| MCP instructions | `src/mlparty/mcp_server.py` | **the workflow text agents execute** — tool names, arguments, required fields |
+| MCP workflow | `src/mlparty/mcp_server.py` | **the workflow text agents execute** — tool names, arguments, required fields. Detail belongs in `WORKFLOW` (served by the `workflow_guide` tool); `INSTRUCTIONS` is only the connection router and must stay under `INSTRUCTIONS_BUDGET`, since clients truncate it silently |
 | CLI help | `src/mlparty/cli.py` | command and option help strings |
 | Docstrings | changed modules | public surfaces only; module `__init__` architectural docstrings |
 | API reference | `docs/api.md` | autodoc targets still exist under those names |

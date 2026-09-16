@@ -226,11 +226,51 @@ Contract refusals return as data (`{ok: false, refusal: {...}}`), never as
 protocol errors.
 
 **Zero-terminal setup is a product requirement**: `mlp init` writes/merges
-`./.mcp.json` so agents in the project pick the server up automatically;
-the full workflow (prior-art query → pre-register → env-launch with
-instrumentation snippet → finalize → distill) ships as the server's MCP
-`instructions` and as a `track_training` prompt. "Use ml-party for this
-run" is all a cold agent needs to hear — validated on unbriefed agents.
+`./.mcp.json` so agents in the project pick the server up after a one-time
+approval; the full workflow (orient → prior-art query → pre-register →
+env-launch with instrumentation snippet → finalize → distill) is served by
+the `workflow_guide` tool. "Use ml-party for this run" is all a cold agent
+needs to hear.
+
+The channel choice is load-bearing, and we got it wrong first. The workflow
+originally shipped as the server's MCP `instructions`, which clients cap —
+Claude Code at exactly 2048 characters, mid-word, with no signal to either
+side — so a 6.5k-character manual was delivered 31% complete to every agent
+that connected. **A teaching channel that can be silently truncated cannot
+hold the contract.**
+
+The cap is the client behaving correctly, not a bug to route around. The MCP
+schema defines `instructions` as *"a hint to the model... MAY be added to the
+system prompt"* — no length limit, but no delivery guarantee either, so a
+client that drops it entirely is conformant and truncating is more generous
+than the spec requires. And capping is right on the merits: server
+instructions are untrusted third-party text injected into the system prompt,
+so an uncapped field lets any connected server flood the context. That is the
+same reasoning we apply to retrieved node content (§ trust model); the client
+is doing to us what we tell agents to do with notes. The error was ours —
+putting a contract in a best-effort field.
+
+Two consequences for anyone editing these strings. The cap is **per client and
+absent from the spec**, so 2048 is not a portable number: the router must
+survive *any* cap, which is why the pointer to `workflow_guide` is in the first
+line rather than merely inside the budget. And the same cap applies **per tool
+description**, truncated just as silently — `run_start`'s docstring is the one
+that creeps toward it, so both limits are pinned by tests.
+
+That still leaves a hole, because "MAY be added to the system prompt" permits a
+client to drop `instructions` altogether: then no router arrives and nothing
+points at the guide. So the backstop is the one channel that cannot be
+truncated or dropped — **the tool response itself**. Every response carries a
+nudge to call `workflow_guide()` until it has been called, which makes the
+teaching independent of whether the connection brief survived. It is
+self-extinguishing, and it reaches a confused agent at exactly the moment it is
+confused, since refusals carry it too. Of the three channels MCP offers, only a tool is both
+complete and reachable on the agent's own initiative: `instructions` is
+capped, and prompts are user-invoked slash commands, so falling back to one
+requires the *user* to already suspect the agent is under-briefed. So
+`instructions` is now a router — a summary whose first line is *call
+`workflow_guide()`*, held under budget by a test — and `track_training`
+remains as the user-facing entry point.
 
 ### 8.2 The two-writer architecture
 

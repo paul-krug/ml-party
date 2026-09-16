@@ -1,11 +1,30 @@
 # MCP setup & tools
 
 ml-party's agent surface is an MCP server. It is **self-teaching**: the full
-tracking workflow (prior-art query → pre-register → env-handshake launch →
-finalize → distill) ships as the server's MCP `instructions` and as a
-`track_training` prompt — the server text is the canonical agent operating
-manual; this page covers setup and the tool surface, and
+tracking workflow (orient → prior-art query → pre-register → env-handshake
+launch → finalize → distill) is the canonical agent operating manual, served
+by the `workflow_guide` tool. This page covers setup and the tool surface, and
 [docs/tracking.md](tracking.md) explains the contract itself.
+
+### How the workflow reaches the agent
+
+Three channels exist and only one of them is reliable, which is why the manual
+lives where it does:
+
+| Channel | Reaches the agent? |
+| --- | --- |
+| `workflow_guide` **tool** | **Yes** — the full manual, pulled on the agent's own initiative. Clients may defer tool *schemas*, but names stay visible. |
+| **Tool responses** | **Yes, unconditionally** — every response carries a nudge to call `workflow_guide()` until it has been called. Nothing truncates or drops a response, so this is the backstop. |
+| MCP `instructions` | Not guaranteed. Clients cap it (Claude Code at exactly 2048 chars, mid-word, silently) and **may drop it outright** — the spec calls it a hint clients *MAY* use. Kept short: a summary whose first line is *call `workflow_guide()`*. |
+| `track_training` **prompt** | Only if you invoke it — prompts are user-triggered slash commands, so an agent cannot reach for one. |
+
+So the connection text is a router, not the manual, and a test pins it under
+budget. If you are writing an MCP server with a workflow to teach, this is the
+trap: a long `instructions` string looks delivered and is not. The spec calls
+the field *"a hint... MAY be added to the system prompt"* — a client may cap it
+or ignore it outright and still be conformant, and capping is sound, since
+server instructions are untrusted text entering the system prompt. Note the cap
+applies **per tool description** too.
 
 ## One store, or one per project?
 
@@ -84,10 +103,11 @@ Verify with `/mcp` inside Claude Code (it lists active servers), or
 runs elsewhere, use `mlp connect --project <that directory>`, or paste the
 `mlp mcp-config` snippet into that client's own configuration.
 
-## Tools (18)
+## Tools (19)
 
 | Tool | Purpose |
 | --- | --- |
+| `workflow_guide` | the full operating manual, plus which store you are serving and what is in it — an agent's first call |
 | `project_ensure`, `experiment_ensure`, `experiment_list` | get-or-create hierarchy; an experiment answers **one question** |
 | `run_start` | pre-register intent + auto-capture; returns `run_id`, `snapshot_report`, hints |
 | `snapshot_preview` | what a code snapshot of a directory would capture, and the delta vs the last one — before anything is written |
@@ -103,8 +123,8 @@ repairable in one round-trip, never a protocol error.
 
 ## Code capture is asked for, never assumed
 
-The server's instructions tell agents to **ask you which directory holds the
-code** before the first run they track, rather than picking one. That
+The workflow guide tells agents to **ask you which directory holds the code**
+before the first run they track, rather than picking one. That
 directory is `source_root`, and it is the only thing that gets snapshotted:
 
 - The agent calls `snapshot_preview` and shows you the file list **before**
