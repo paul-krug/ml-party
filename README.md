@@ -43,18 +43,18 @@ Core ideas:
 - **Boards: agents author whole views.** An agent logs a self-contained
   HTML page as an artifact and the UI renders it sandboxed — comparison
   dashboards, demo galleries, live reports that fetch current data from the
-  read-only API at view time ([docs/boards.md](docs/boards.md)).
+  read-only API at view time ([boards guide](https://paul-krug.github.io/ml-party/boards.html)).
 - **Run control through registered templates.** Users register shell
   templates with typed placeholders — the allowlist; agents invoke them
   with validated, shell-quoted *values* (never commands), and every
   invocation is recorded in the graph, edged to the run it controlled.
   Restart is never a mutation: a new run, `derives-from` the old
-  ([docs/actions.md](docs/actions.md)).
+  ([run-control guide](https://paul-krug.github.io/ml-party/actions.html)).
 - **Local-first, remote-ready.** Writers always write a local spool store;
   spool-and-flush sync ships runs to a served store over three idempotent
-  streams ([docs/remote.md](docs/remote.md)). Multi-user auth (roles,
+  streams ([remote-tracking guide](https://paul-krug.github.io/ml-party/remote.html)). Multi-user auth (roles,
   per-user tokens, UI login) activates with the first `mlp user add`
-  ([docs/deploy.md](docs/deploy.md)).
+  ([deployment guide](https://paul-krug.github.io/ml-party/deploy.html)).
 
 ## Quickstart
 
@@ -116,8 +116,8 @@ live SSE metric dashboards, a finder-style artifact browser (image/audio/
 video viewers, an `.npy`/`.npz` tensor slicer), agent-authored boards, the
 lineage graph, search, and diff. Remote box → tunnel like TensorBoard:
 `ssh -L 7327:localhost:7327 <box>`. For a shared server with logins and
-sync ingest, see [docs/deploy.md](docs/deploy.md) and
-[docs/remote.md](docs/remote.md).
+sync ingest, see the [deployment guide](https://paul-krug.github.io/ml-party/deploy.html)
+and the [remote-tracking guide](https://paul-krug.github.io/ml-party/remote.html).
 
 ## Design
 
