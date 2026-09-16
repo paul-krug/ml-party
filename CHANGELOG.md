@@ -7,6 +7,8 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+## [0.2.3] — 2026-09-16
+
 ### Fixed
 - **Code snapshots no longer capture files you did not point at.**
   Previously a run with no `source_root` snapshotted the whole directory
