@@ -7,6 +7,8 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+## [0.2.5] — 2026-09-16
+
 ### Fixed
 - **The self-teaching server was not teaching.** The tracking workflow shipped
   as the MCP `instructions` string, and clients cap that — Claude Code at
