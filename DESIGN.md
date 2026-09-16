@@ -154,14 +154,23 @@ snapshotted as a commit. Load-bearing invariants:
 5. **One ref per run** (`refs/runs/<run_id>`) — no shared branch tip, no ref
    races; this plus per-run metric journals and SQLite-WAL short
    transactions makes concurrency safe by construction.
-6. **Snapshot = source, not binaries. Allowlist policy** (`*.py *.sh *.toml
-   *.yaml *.yml *.json *.md *.txt *.cfg *.ini`, Makefile, dotfiles;
-   configurable), per-file and total size caps with hard refusal listing
-   offenders, and a **mandatory snapshot report** (included / excluded /
-   skipped-for-size + bytes) — the allowlist's failure mode is silently
-   excluding the file that mattered, so capture must be auditable. Known
-   trap: run *outputs* inside the source tree bloat snapshots; exclude them
-   in `store.toml`.
+6. **Nothing is captured that the user did not point at.** `source_root` is
+   explicit: without it a run records *no* source. With it, and when the
+   root is a git repo, the file set is what **git** reports (tracked plus
+   untracked-but-unignored) — `.gitignore` is a boundary the user already
+   drew, so the snapshot inherits it instead of second-guessing it with an
+   extension allowlist. A non-git root has no such boundary, so it falls
+   back to the allowlist walk *and* requires `confirm_snapshot`; so does any
+   capture past `confirm_above_files` / `confirm_above_bytes`. A root at or
+   above `$HOME` is refused outright. Secret-shaped filenames are denied and
+   size caps apply in both modes, with a hard refusal listing offenders.
+   The **snapshot report records what went in as well as what stayed out** —
+   capture fails in two directions (silently dropping the file that
+   mattered; silently absorbing files that were never meant to leave the
+   machine), and only an auditable report catches both. `snapshot_preview()`
+   answers the same question before anything is written. Known trap: run
+   *outputs* inside the source tree bloat snapshots; exclude them in
+   `store.toml`.
 7. **Env lock lives *in* the snapshot** (`.mlparty/env.lock` — part of the
    program, diffed and dedup'd); instance facts (hardware, seed, data
    fingerprints, metrics) live on the run node.

@@ -25,6 +25,7 @@ def _start(mlp, title="run", exp="exp-a", **over):
         "purpose": "check that the lifecycle works end to end",
         "hypothesis": "exploratory: does the pipeline hold together?",
         "parameters": {"lr": 0.001}, "created_by": "test",
+        "source_root": mlp.store.root.parent, "confirm_snapshot": True,
     } | FAST_CAPTURE | over
     return mlp.run_start(**args)
 

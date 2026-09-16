@@ -22,12 +22,13 @@ one-time approval. From there, "use ml-party to track this run" is all an
 agent needs to hear. Note: `.mcp.json` carries absolute paths — keep it out
 of git.
 
-## Tools (17)
+## Tools (18)
 
 | Tool | Purpose |
 | --- | --- |
 | `project_ensure`, `experiment_ensure`, `experiment_list` | get-or-create hierarchy; an experiment answers **one question** |
 | `run_start` | pre-register intent + auto-capture; returns `run_id`, `snapshot_report`, hints |
+| `snapshot_preview` | what a code snapshot of a directory would capture, and the delta vs the last one — before anything is written |
 | `run_log_metric`, `run_log_artifact` | telemetry from the agent side (the training process usually streams instead — see tracking.md) |
 | `experiment_log_artifact` | cross-run artifacts on the experiment — experiment-level boards, summary reports (see boards.md) |
 | `action_list`, `action_invoke`, `action_register` | run control through registered templates — audited, typed, quoted (see actions.md) |

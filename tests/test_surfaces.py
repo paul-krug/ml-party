@@ -19,7 +19,7 @@ EXPECTED_TOOLS = {
     "run_start", "run_log_metric", "run_log_artifact", "experiment_log_artifact",
     "run_finalize", "run_fail",
     "note_create", "node_get", "node_annotate", "graph_query", "run_diff",
-    "action_list", "action_invoke", "action_register",
+    "action_list", "action_invoke", "action_register", "snapshot_preview",
 }
 
 
@@ -39,6 +39,7 @@ def _start(party, title="run", **over):
         "purpose": "exercise the surfaces end to end",
         "hypothesis": "exploratory: do all frontends agree?",
         "parameters": {"lr": 0.001}, "created_by": "test",
+        "source_root": party.store.root.parent, "confirm_snapshot": True,
     } | FAST | over
     return party.run_start(**args)
 

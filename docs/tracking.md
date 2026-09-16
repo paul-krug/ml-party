@@ -56,10 +56,32 @@ if _mlp: _mlp.log_metric("loss", float(loss), step=step)
 
 ## What gets captured automatically
 
-At `run_start` (the launcher's view): a source snapshot (allowlisted,
-size-capped, secrets redacted — read the returned `snapshot_report`), the
-outer git state, an env lock for `python_exe`, hardware
-(`captured_by: "start"`).
+At `run_start` (the launcher's view): the outer git state, an env lock for
+`python_exe`, hardware (`captured_by: "start"`) — and, **only if you pass
+`source_root`**, a snapshot of the code.
+
+Code capture is deliberately explicit, because a snapshot copies file
+contents into the store and, on a served store, on to everyone who can read
+it:
+
+- **No `source_root` → no code is captured.** ml-party never guesses which
+  directory to copy.
+- **In a git repo**, the snapshot is what git tracks plus untracked files
+  that are not ignored — your `.gitignore` decides what belongs to the
+  project.
+- **Outside a git repo** there is no such boundary, so the capture is
+  refused until you pass `confirm_snapshot=True`; the refusal carries the
+  file list to review. The same applies to unusually large captures
+  (`confirm_above_files` / `confirm_above_bytes` in `store.toml`).
+- Secret-shaped filenames (`.env`, `*.pem`, `id_rsa*`, …) are never
+  captured, even when tracked, and a root at or above your home directory
+  is refused outright.
+- `mlp snapshot-preview <dir>` (or the `snapshot_preview` MCP tool) shows
+  exactly what would be captured before anything is written — add
+  `--experiment` to see only what changed since the last snapshot.
+
+Read the returned `snapshot_report` both ways: was anything important
+excluded, and did anything land in it that should not be in the store?
 
 At `attach()` (the compute host — the honest witness, which may be a
 different machine): the **actual** invocation (argv/cwd/env),

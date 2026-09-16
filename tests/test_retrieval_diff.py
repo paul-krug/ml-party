@@ -18,7 +18,8 @@ def party(tmp_path):
 def _start(p, title, purpose, hypothesis="exploratory: what happens?", params=None, **over):
     return p.run_start(
         experiment="inversion", title=title, purpose=purpose, hypothesis=hypothesis,
-        parameters=params or {"lr": 0.001}, created_by="test", **(FAST | over))
+        parameters=params or {"lr": 0.001}, created_by="test",
+        **({"source_root": p.store.root.parent, "confirm_snapshot": True} | FAST | over))
 
 
 def _finalize(p, run_id, summary, verdict="confirmed", metrics=None, **over):

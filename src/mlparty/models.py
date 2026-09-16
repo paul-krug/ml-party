@@ -74,6 +74,11 @@ class CommitRef(BaseModel):
 class SnapshotReport(BaseModel):
     included_files: int = 0
     included_bytes: int = 0
+    # What actually went in (capped; included_files keeps the exact count).
+    # Without this the report can say what it left out but not what it took —
+    # the only question that matters when checking for a leak.
+    included: list[str] = Field(default_factory=list)
+    source_mode: str | None = None  # 'git' | 'walk' | None (no source captured)
     excluded: list[str] = Field(default_factory=list)
     skipped_for_size: list[str] = Field(default_factory=list)
     redacted_keys: list[str] = Field(default_factory=list)

@@ -33,8 +33,9 @@ Core ideas:
   provenance). `run_finalize` refuses without method + result/verdict +
   reproduce — refusals are machine-readable `{missing, invalid}`. Failures
   are knowledge (`run_fail`); silent deaths become `abandoned`.
-- **Internal git per experiment.** Every run snapshots the actually-running
-  source (allowlisted, size-capped, secrets denied) as a commit in a bare
+- **Internal git per experiment.** A run snapshots the actually-running
+  source — the directory you name, bounded by what git tracks there, never a
+  guess — as a commit in a bare
   internal repo. A run *references* a commit — a launch-arg sweep is many
   runs on one commit, distinguished by mandatory `parameters`. Declared
   `derives_from` lineage becomes the commit's parent; every run gets its own
