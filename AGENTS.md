@@ -3,7 +3,7 @@
 Canonical entry point for any AI agent or contributor working **on this
 repo**. (If you are an agent *using* ml-party to track runs, this is the
 wrong document — the MCP server teaches you its own workflow; see
-[docs/mcp.md](docs/mcp.md).)
+[src/mlparty/_docs/mcp.md](src/mlparty/_docs/mcp.md).)
 
 ## What this is
 
@@ -21,7 +21,7 @@ Agent-native ML experiment tracking + lineage/knowledge substrate. Package
 | Question | Owner |
 | --- | --- |
 | Why is the system shaped this way? Invariants? | [DESIGN.md](DESIGN.md) |
-| How do I use it? (users + operating agents) | [docs/](docs/) — [tracking.md](docs/tracking.md), [ui.md](docs/ui.md), [mcp.md](docs/mcp.md) |
+| How do I use it? (users + operating agents) | [src/mlparty/_docs/](src/mlparty/_docs/) — [tracking.md](src/mlparty/_docs/tracking.md), [ui.md](src/mlparty/_docs/ui.md), [mcp.md](src/mlparty/_docs/mcp.md) |
 | What ships when? | the repo's GitHub Project |
 | What changed? | [CHANGELOG.md](CHANGELOG.md) |
 

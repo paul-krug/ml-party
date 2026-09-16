@@ -15,7 +15,7 @@ from mlparty.mcp_server import build_server
 FAST = {"python_exe": "/nonexistent/python"}
 
 EXPECTED_TOOLS = {
-    "workflow_guide",
+    "workflow_guide", "help",
     "project_ensure", "experiment_ensure", "experiment_list",
     "run_start", "run_log_metric", "run_log_artifact", "experiment_log_artifact",
     "run_finalize", "run_fail",

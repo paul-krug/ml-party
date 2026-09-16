@@ -6,7 +6,13 @@ snapshot engine → MlParty core API → three thin frontends (MCP server,
 `mlp` CLI, in-process client lib) plus a read-only HTTP API for the viewer.
 """
 
-__version__ = "0.1.0"
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _version
+
+try:                                    # single source of truth: pyproject
+    __version__ = _version("mlparty")
+except PackageNotFoundError:            # a source tree that was never installed
+    __version__ = "0.0.0+unknown"
 
 from .client import RunHandle, attach, start_run
 from .core import MlParty
