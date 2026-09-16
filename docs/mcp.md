@@ -52,3 +52,22 @@ runs elsewhere, use `mlp connect --project <that directory>`, or paste the
 
 Contract refusals come back as `{ok: false, refusal: {missing, invalid}}` —
 repairable in one round-trip, never a protocol error.
+
+## Code capture is asked for, never assumed
+
+The server's instructions tell agents to **ask you which directory holds the
+code** before the first run they track, rather than picking one. That
+directory is `source_root`, and it is the only thing that gets snapshotted:
+
+- The agent calls `snapshot_preview` and shows you the file list **before**
+  anything is written.
+- Files your `.gitignore` excludes are never captured — that is the lever
+  for keeping something out, and it is one you already use.
+- No `source_root` at all means the run records no code. Nothing is ever
+  captured silently.
+- Outside a git repo, or for an unusually large capture, `run_start` refuses
+  until the agent has shown you the list and you agree (`confirm_snapshot`).
+  Agents are instructed never to set that flag on their own.
+
+Once you have settled on a directory, later runs from it need no new
+permission; the preview's delta reports what changed.

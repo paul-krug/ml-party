@@ -30,6 +30,13 @@ history and pull requests; entries land here when they are release-worthy.
 - `snapshot_report` now records the files that were **included**, not only
   those excluded.
 
+- Agents are now instructed to **ask which directory to capture** before the
+  first tracked run in a project, show the file list from `snapshot_preview`
+  before anything is written, and point out that `.gitignore` is what keeps a
+  file out — so the choice is made knowingly instead of defaulted into.
+  `source_root` is documented in the README and MCP guide too; it was
+  previously mentioned only in passing, despite deciding what leaves your
+  machine.
 - `mlp init` / `mlp connect` now print where `.mcp.json` was written and how
   to make it take effect — agents read it from the directory they are
   *started* in, and need a one-time approval — plus how to verify (`/mcp`,
