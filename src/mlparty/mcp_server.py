@@ -185,6 +185,9 @@ def build_server(root: Path | str) -> MCPServer:
         # A tool RESPONSE is the one teaching channel no client truncates or
         # drops, so an unbriefed agent gets told on every call until it reads
         # the guide. Self-extinguishing: the nudge stops once it has.
+        # guide_read is per PROCESS, which equals per session only because we
+        # serve over stdio (one process per client). A shared HTTP transport
+        # would need this keyed by session, or one agent silences it for all.
         out = _guarded(fn, **kwargs)
         if not guide_read:
             out["guide"] = GUIDE_NUDGE
