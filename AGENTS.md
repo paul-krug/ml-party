@@ -105,3 +105,5 @@ build is CI-gated.
 - mcp SDK 2.0: `from mcp.server import MCPServer` (FastMCP is gone).
 - fastembed returns numpy float32 — cast to Python floats before json.dumps.
 - `git add -A` sweeps build caches — add artifacts to .gitignore first.
+
+<!-- guard smoke test, reverted immediately -->
