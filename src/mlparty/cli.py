@@ -25,6 +25,19 @@ def _mcp_server_entry(store_root: Path) -> dict:
     }
 
 
+def _mcp_next_steps(project_dir: Path) -> str:
+    """Registration only takes effect for an agent started in this directory,
+    after a one-time approval — so say both, and say how to check."""
+    return (
+        f"\nNEXT: start your agent from this directory — it only reads .mcp.json\n"
+        f"  from the directory it is started in:\n"
+        f"      cd {project_dir} && claude\n"
+        f"  Approve 'ml-party' when prompted, then verify with /mcp.\n"
+        f"  Not listed? `claude mcp list` shows what was loaded; `mlp mcp-config`\n"
+        f"  prints the snippet for other MCP clients."
+    )
+
+
 def _register_mcp(project_dir: Path, store_root: Path) -> Path:
     """Write/merge the ml-party server into the project's .mcp.json — the
     zero-terminal registration path Claude Code (and compatible agents) read."""
@@ -66,9 +79,8 @@ def init(root: str | None = RootOpt,
     typer.echo(f"initialized ml-party store at {store.root}")
     if not no_mcp:
         cfg = _register_mcp(Path.cwd(), store.root)
-        typer.echo(f"registered MCP server in {cfg} — agents started in this project "
-                   "pick it up automatically (approve it once when asked)")
-        typer.echo("other MCP clients: `mlp mcp-config` prints the snippet to paste")
+        typer.echo(f"registered the MCP server in {cfg}")
+        typer.echo(_mcp_next_steps(cfg.parent))
 
 
 @app.command()
@@ -79,6 +91,7 @@ def connect(root: str | None = RootOpt,
     store = Store(_root(root))  # validates the store exists
     cfg = _register_mcp(Path(project).resolve(), store.root)
     typer.echo(f"registered MCP server for store {store.root} in {cfg}")
+    typer.echo(_mcp_next_steps(cfg.parent))
 
 
 @app.command("mcp-config")
