@@ -44,15 +44,20 @@ THE WORKFLOW for any ML run the user asks you to track:
    returned snapshot_report and hints — in BOTH directions: was anything
    important excluded, AND did anything land in the snapshot that does not
    belong in a shared store?
-2a. CODE CAPTURE IS THE USER'S CALL. source_root decides what gets copied into
-   the store — and, on a served store, what every other viewer can read. Point
-   it at the project directory, never at a home directory or a folder holding
-   unrelated personal files. The FIRST time you capture a directory, call
-   snapshot_preview(source_root) and show the user what it would take; if
-   run_start comes back with needs_confirmation, show that preview and ask
-   before retrying with confirm_snapshot=True. Do not set that flag on your own
-   initiative. Later runs from the same directory need no new permission — the
-   preview's delta tells you what changed.
+2a. ASK THE USER WHICH DIRECTORY TO CAPTURE — never pick it silently.
+   Before the FIRST run you track in a project, ask them plainly: "which
+   directory holds the code for this run?" A snapshot copies those files into
+   the store, and on a served store everyone with access can read them, so the
+   choice is theirs to make knowingly, not a default you assume.
+   Then, before anything is written, call snapshot_preview(<their answer>) and
+   show them the actual file list. Tell them two things they probably do not
+   know: anything matched by .gitignore is never captured (that is how they
+   keep a file out), and passing no source_root at all means no code is
+   captured for the run.
+   If run_start returns needs_confirmation, show that preview and ask again;
+   only then retry with confirm_snapshot=True. NEVER set that flag on your own
+   initiative. Once they have agreed on a directory, later runs from it need no
+   new permission — report the preview's delta instead of re-asking.
 3. Launch the training with these environment variables set:
        ML_PARTY_STORE=<this store's root>   ML_PARTY_RUN=<run_id from step 2>
    The script streams its own metrics via the client library. If the script is

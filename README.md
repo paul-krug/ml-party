@@ -83,13 +83,26 @@ Code.
 
 ### Let an agent drive it
 
-`mlp init` registered the MCP server in `./.mcp.json`, so agents started in
-this project (Claude Code and compatible clients) pick it up automatically —
-approve it once when asked. The server is **self-teaching**: the full
-tracking workflow rides in its MCP instructions, so *"use ml-party for this
-run"* is all an agent needs to hear. Other setups: `mlp connect` registers
-an existing store into another project; `mlp mcp-config` prints the snippet
-for other MCP clients.
+`mlp init` registered the MCP server in `./.mcp.json`. **Start your agent
+from this directory** — a project-scoped server is read from the directory
+the agent starts in — and approve `ml-party` when prompted; `/mcp` lists
+what is active. The server is **self-teaching**: the full tracking workflow
+rides in its MCP instructions, so *"use ml-party for this run"* is all an
+agent needs to hear.
+
+Before the first run it will **ask which directory holds your code**. That
+directory (`source_root`) is what gets snapshotted into the store, so the
+agent shows you the file list before anything is written, and never captures
+what your `.gitignore` excludes. Say no source directory and the run simply
+records no code — nothing is ever swept up silently.
+
+Other setups: `mlp connect --project <dir>` registers an existing store for
+another project; `mlp mcp-config` prints the snippet for other MCP clients;
+for one store across every project, register it user-wide:
+
+```bash
+claude mcp add -s user ml-party -- "$(pwd)/.venv/bin/mlp" serve-mcp --root "$(pwd)/.mlparty"
+```
 
 ### Instrument a training script
 
