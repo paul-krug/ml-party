@@ -16,7 +16,7 @@ def _populated(tmp_path):
     out = party.run_start(
         experiment="e", title="backed-up run", purpose="exercise backup and restore",
         hypothesis="exploratory: does a restored store rebuild identically?",
-        parameters={"lr": 0.1}, created_by="test", source_root=src, **FAST)
+        parameters={"lr": 0.1}, created_by="test", source_root=src, confirm_snapshot=True, **FAST)
     rid = out["run_id"]
     party.run_log_metric(rid, "loss", 0.5, step=0)
     ckpt = tmp_path / "best.pt"

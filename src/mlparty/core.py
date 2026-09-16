@@ -9,11 +9,17 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from dulwich.objects import Blob
 from pydantic import ValidationError
 
 from . import capture
 from .contract import ContractViolation, validate_fail, validate_finalize, validate_start
-from .gitstore import GitStore
+from .gitstore import (
+    GitStore,
+    SnapshotNeedsConfirmation,
+    check_source_root,
+    collect_source,
+)
 from .ids import new_id, params_hash
 from .models import (
     Abstract,
@@ -29,6 +35,7 @@ from .models import (
     ProjectNode,
     Result,
     RunNode,
+    SnapshotReport,
     utcnow,
 )
 from .redact import redact_mapping
@@ -146,6 +153,71 @@ class MlParty:
 
     # ------------------------------------------------------------------- runs
 
+    def _needs_confirmation(self, report: SnapshotReport) -> str | None:
+        """Why this capture requires explicit consent, or None if it doesn't."""
+        cfg = self.store.config
+        if report.source_mode == "walk":
+            return ("source_root is not a git repository, so nothing "
+                    "(no .gitignore) bounds what would be captured")
+        if report.included_files > cfg.confirm_above_files:
+            return f"{report.included_files} files exceeds confirm_above_files"
+        if report.included_bytes > cfg.confirm_above_bytes:
+            return f"{report.included_bytes} bytes exceeds confirm_above_bytes"
+        return None
+
+    def _preview_payload(self, root: Path, report: SnapshotReport) -> dict:
+        return {
+            "source_root": str(root),
+            "source_mode": report.source_mode,
+            "included_files": report.included_files,
+            "included_bytes": report.included_bytes,
+            "files": report.included,
+            "files_truncated": report.included_files > len(report.included),
+            "excluded_sample": report.excluded[:20],
+            "skipped_for_size": report.skipped_for_size[:20],
+        }
+
+    def snapshot_preview(self, source_root: Path | str,
+                         experiment: str | None = None) -> dict:
+        """What a snapshot of `source_root` would capture, without writing it.
+
+        Pass `experiment` to also learn whether this exact tree is already
+        stored — a re-run of unchanged code adds nothing, and saying so is
+        more useful than re-listing the same files every time.
+        """
+        root = check_source_root(source_root)
+        files, report = collect_source(root, self.store.config, {self.store.root})
+        out = self._preview_payload(root, report)
+        out["needs_confirmation"] = self._needs_confirmation(report)
+        pg = capture.capture_project_git(root)
+        out["project_git"] = pg.model_dump() if pg else None
+        if experiment:
+            out["delta"] = self._snapshot_delta(experiment, files)
+        return out
+
+    def _snapshot_delta(self, experiment: str, files: dict) -> dict:
+        """What this capture would add or change versus the most recent run
+        already holding a snapshot in this experiment."""
+        exp = self._resolve(experiment, "experiment")
+        prior = next(
+            (r for r in self.store.list_nodes(type="run", experiment_id=exp.id, limit=200)
+             if getattr(r, "code_ref", None)), None)
+        if prior is None:
+            return {"compared_to": None, "note": "first snapshot in this experiment"}
+        stored = self.git.tree_blob_map(exp.id, prior.code_ref.commit_sha)
+        stored.pop(capture.ENV_LOCK_PATH, None)
+        now = {rel: Blob.from_string(p.read_bytes()).id.decode() for rel, p in files.items()}
+        added = sorted(set(now) - set(stored))
+        removed = sorted(set(stored) - set(now))
+        modified = sorted(r for r in set(now) & set(stored) if now[r] != stored[r])
+        return {
+            "compared_to": {"id": prior.id, "title": prior.title},
+            "added": added[:100], "removed": removed[:100], "modified": modified[:100],
+            "added_count": len(added), "removed_count": len(removed),
+            "modified_count": len(modified),
+            "unchanged": not (added or removed or modified),
+        }
+
     def run_start(
         self,
         experiment: str,
@@ -161,10 +233,22 @@ class MlParty:
         source_root: Path | str | None = None,
         python_exe: str | None = None,
         planned_command: str | None = None,
+        confirm_snapshot: bool = False,
     ) -> dict:
         validate_start(title, purpose, hypothesis, parameters)
         exp = self._resolve(experiment, "experiment")
-        root = Path(source_root) if source_root else self.store.root.parent
+        # No source_root means NO source is captured. It used to mean "walk the
+        # directory holding the store", which swept whatever happened to live
+        # there into the run — and, through sync, into a shared store.
+        root = check_source_root(source_root) if source_root else None
+
+        collected = None
+        if root is not None:
+            collected = collect_source(root, self.store.config, {self.store.root})
+            reason = self._needs_confirmation(collected[1])
+            if reason and not confirm_snapshot:
+                raise SnapshotNeedsConfirmation(
+                    self._preview_payload(root, collected[1]), reason)
 
         clean_params, redacted = redact_mapping(
             parameters, self.store.config.redact_extra_patterns)
@@ -178,11 +262,16 @@ class MlParty:
             exp.id, root, self.store.config,
             inject={capture.ENV_LOCK_PATH: env_lock},
             extra_exclude={self.store.root},
+            collected=collected,
         )
         report.redacted_keys = redacted
 
         # hints BEFORE this run is inserted: assist, don't assert (§2.1)
         hints: list[str] = []
+        if root is None:
+            hints.append(
+                "no source_root given — this run has NO code snapshot; pass "
+                "source_root=<the directory holding the training code> to capture one")
         same_tree = self.store.index.runs_by_tree(exp.id, tree_sha)
         if same_tree:
             names = ", ".join(f"{d['title']} ({d['id']})" for d in same_tree[:5])
@@ -205,7 +294,8 @@ class MlParty:
 
         invocation = None
         if planned_command:
-            invocation = Invocation(argv=[planned_command], cwd=str(root),
+            invocation = Invocation(argv=[planned_command],
+                                    cwd=str(root) if root else None,
                                     captured_by="agent")
 
         run = RunNode(
@@ -217,7 +307,7 @@ class MlParty:
             code_ref=CommitRef(repo=f"repos/{exp.id}.git",
                                commit_sha=commit_sha, tree_sha=tree_sha),
             snapshot_report=report,
-            project_git=capture.capture_project_git(root),
+            project_git=capture.capture_project_git(root) if root else None,
             invocation=invocation,
             env_lock_ref=capture.ENV_LOCK_PATH,
             hardware=capture.capture_hardware(captured_by="start"),

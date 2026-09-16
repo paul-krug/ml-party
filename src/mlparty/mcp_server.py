@@ -14,6 +14,7 @@ from mcp.server import MCPServer
 
 from .contract import ContractViolation
 from .core import MlParty
+from .gitstore import SnapshotNeedsConfirmation, UnsafeSourceRoot
 from .store import NodeNotFound
 
 ENV_STORE = "ML_PARTY_STORE"
@@ -40,7 +41,18 @@ THE WORKFLOW for any ML run the user asks you to track:
    ids] when building on a run (it also becomes the snapshot commit's parent);
    source_root=<directory with the training code>; python_exe=<the interpreter
    the training will use> (feeds the env lock); seed; data_refs. Read the
-   returned snapshot_report (was anything important excluded?) and hints.
+   returned snapshot_report and hints — in BOTH directions: was anything
+   important excluded, AND did anything land in the snapshot that does not
+   belong in a shared store?
+2a. CODE CAPTURE IS THE USER'S CALL. source_root decides what gets copied into
+   the store — and, on a served store, what every other viewer can read. Point
+   it at the project directory, never at a home directory or a folder holding
+   unrelated personal files. The FIRST time you capture a directory, call
+   snapshot_preview(source_root) and show the user what it would take; if
+   run_start comes back with needs_confirmation, show that preview and ask
+   before retrying with confirm_snapshot=True. Do not set that flag on your own
+   initiative. Later runs from the same directory need no new permission — the
+   preview's delta tells you what changed.
 3. Launch the training with these environment variables set:
        ML_PARTY_STORE=<this store's root>   ML_PARTY_RUN=<run_id from step 2>
    The script streams its own metrics via the client library. If the script is
@@ -116,6 +128,13 @@ def build_server(root: Path | str) -> MCPServer:
         except ContractViolation as e:
             return {"ok": False, "refusal": e.to_dict(),
                     "hint": "fill the missing/invalid fields and call again"}
+        except SnapshotNeedsConfirmation as e:
+            return {"ok": False, "needs_confirmation": e.reason, "preview": e.preview,
+                    "hint": "SHOW the user this file list and ask before proceeding. "
+                            "Pass confirm_snapshot=True only once they agree — or "
+                            "point source_root at a narrower directory."}
+        except UnsafeSourceRoot as e:
+            return {"ok": False, "error": str(e)}
         except NodeNotFound as e:
             return {"ok": False, "error": f"not found: {e}"}
 
@@ -145,22 +164,43 @@ def build_server(root: Path | str) -> MCPServer:
                   data_refs: list[dict] | None = None, seed: int | None = None,
                   tags: list[str] | None = None, source_root: str | None = None,
                   python_exe: str | None = None, planned_command: str | None = None,
-                  created_by: str = "agent") -> dict:
+                  created_by: str = "agent", confirm_snapshot: bool = False) -> dict:
         """Start a run: pre-registration (purpose = why this run exists; hypothesis =
         expected outcome and why, or 'exploratory: <question>'; parameters = the FULL
-        config) plus automatic repro-tuple capture: source snapshot into the
-        experiment's internal git repo (allowlisted), env lock (point python_exe at
-        the interpreter the training will use), hardware, outer-repo git provenance.
-        derives_from (run ids) declares lineage — it becomes both a graph edge and
-        the snapshot commit's parent. Returns run_id, the commit, a snapshot report
-        (verify nothing important was excluded), and hints (e.g. tree identical to a
-        prior run). Launch the training with env ML_PARTY_RUN=<run_id> so the script
-        can attach via mlparty.attach()."""
+        config) plus automatic repro-tuple capture: env lock (point python_exe at the
+        interpreter the training will use), hardware, outer-repo git provenance, and —
+        only if you pass source_root — a snapshot of the training code.
+
+        source_root is the directory holding the training code. WITHOUT it NO code is
+        captured (by design: ml-party never guesses which files to copy). In a git
+        repo the snapshot is what git tracks, minus ignored files; elsewhere it needs
+        confirm_snapshot=True, and so does any unusually large capture — in both cases
+        the refusal carries a preview to show the user first.
+
+        derives_from (run ids) declares lineage — it becomes both a graph edge and the
+        snapshot commit's parent. Returns run_id, the commit, a snapshot report (check
+        BOTH directions: was anything important excluded, and did anything land in it
+        that should not be in the store?), and hints. Launch the training with env
+        ML_PARTY_RUN=<run_id> so the script can attach via mlparty.attach()."""
         return guarded(party.run_start, experiment=experiment, title=title,
                        purpose=purpose, hypothesis=hypothesis, parameters=parameters,
                        derives_from=derives_from, data_refs=data_refs, seed=seed,
                        tags=tags, source_root=source_root, python_exe=python_exe,
-                       planned_command=planned_command, created_by=created_by)
+                       planned_command=planned_command, created_by=created_by,
+                       confirm_snapshot=confirm_snapshot)
+
+    @mcp.tool()
+    def snapshot_preview(source_root: str, experiment: str | None = None) -> dict:
+        """Exactly what a code snapshot of source_root WOULD capture — file list,
+        totals, and whether the capture needs confirmation — without writing
+        anything. Pass experiment to also get the delta against the snapshot already
+        stored there (added / modified / removed), so a re-run of unchanged code can
+        be reported as 'nothing new' instead of re-listing every file.
+
+        Use this before the FIRST capture of a directory, show the user the list, and
+        only then call run_start with confirm_snapshot=True if it needs it."""
+        return guarded(party.snapshot_preview, source_root=source_root,
+                       experiment=experiment)
 
     @mcp.tool()
     def run_log_metric(run: str, name: str, value: float, step: int | None = None) -> dict:

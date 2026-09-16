@@ -88,6 +88,31 @@ def mcp_config(root: str | None = RootOpt):
                           indent=2))
 
 
+@app.command("snapshot-preview")
+def snapshot_preview(source_root: str = typer.Argument(..., help="directory a run would snapshot"),
+                     experiment: str | None = typer.Option(None, "--experiment", "-e",
+                                                           help="also diff against this "
+                                                                "experiment's last snapshot"),
+                     root: str | None = RootOpt):
+    """Show exactly what a run would capture from a directory — before it does."""
+    out = _party(root).snapshot_preview(source_root, experiment=experiment)
+    typer.echo(f"{out['included_files']} file(s), {out['included_bytes']} bytes "
+               f"from {out['source_root']} (mode: {out['source_mode']})")
+    for f in out["files"]:
+        typer.echo(f"  {f}")
+    if out["files_truncated"]:
+        typer.echo("  … list truncated")
+    if out["needs_confirmation"]:
+        typer.echo(f"needs confirmation: {out['needs_confirmation']}")
+    delta = out.get("delta")
+    if delta and delta.get("compared_to"):
+        if delta["unchanged"]:
+            typer.echo(f"identical to {delta['compared_to']['id']} — nothing new would be stored")
+        else:
+            typer.echo(f"vs {delta['compared_to']['id']}: +{delta['added_count']} "
+                       f"~{delta['modified_count']} -{delta['removed_count']}")
+
+
 @app.command()
 def status(root: str | None = RootOpt):
     """Store overview: node counts, open runs."""

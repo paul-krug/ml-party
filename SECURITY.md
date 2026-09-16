@@ -119,6 +119,19 @@ and its enforcement cannot drift apart.
    admins included; all eight checks must pass and the branch must be
    current before a merge is possible.
 
+## Code snapshots are a data-exposure surface
+
+A run's code snapshot copies file *contents* into the store, and a served
+store shows them to everyone with viewer access — so what a snapshot
+collects is a privacy decision, not just a reproducibility one. Captures
+are therefore explicit and bounded: no `source_root` means no code is
+captured; inside a git repo the boundary is what git tracks (your
+`.gitignore` is honoured); outside one, or past the size thresholds, the
+capture is refused until the caller passes `confirm_snapshot` after
+reviewing the file list; a root at or above `$HOME` is refused outright;
+and secret-shaped filenames are denied even when tracked. Preview any
+capture with `mlp snapshot-preview <dir>` before it is written.
+
 ## Known limitations (0.x)
 
 - Roles are store-wide (no per-project scoping yet); OIDC/SSO is planned

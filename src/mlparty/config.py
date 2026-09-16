@@ -28,6 +28,10 @@ exclude_dirs = [
 ]
 per_file_cap_bytes = 5_000_000     # an oversized allowlisted file is data, not source
 total_cap_bytes = 200_000_000      # hard refusal above this, listing offenders
+# Above either threshold — or for any non-git root, where no .gitignore drew
+# a boundary — run_start refuses until the caller passes confirm_snapshot.
+confirm_above_files = 500
+confirm_above_bytes = 25_000_000
 
 [runs]
 abandoned_ttl_hours = 72
@@ -59,6 +63,8 @@ class StoreConfig:
     exclude_dirs: set[str] = field(default_factory=set)
     per_file_cap_bytes: int = 5_000_000
     total_cap_bytes: int = 200_000_000
+    confirm_above_files: int = 500
+    confirm_above_bytes: int = 25_000_000
     abandoned_ttl_hours: int = 72
     redact_extra_patterns: list[str] = field(default_factory=list)
     embedder: str = "none"
@@ -90,6 +96,8 @@ class StoreConfig:
             exclude_dirs=set(snap.get("exclude_dirs", [])),
             per_file_cap_bytes=int(snap.get("per_file_cap_bytes", 5_000_000)),
             total_cap_bytes=int(snap.get("total_cap_bytes", 200_000_000)),
+            confirm_above_files=int(snap.get("confirm_above_files", 500)),
+            confirm_above_bytes=int(snap.get("confirm_above_bytes", 25_000_000)),
             abandoned_ttl_hours=int(raw.get("runs", {}).get("abandoned_ttl_hours", 72)),
             redact_extra_patterns=list(raw.get("redact", {}).get("extra_patterns", [])),
             embedder=str(raw.get("retrieval", {}).get("embedder", "none")),

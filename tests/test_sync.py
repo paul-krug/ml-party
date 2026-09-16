@@ -20,7 +20,7 @@ def client_party(tmp_path):
     party.run_start(
         experiment="e", title="remote run", purpose="exercise the sync protocol",
         hypothesis="exploratory: does spool-and-flush hold together?",
-        parameters={"lr": 0.1}, created_by="agent", source_root=src, **FAST)
+        parameters={"lr": 0.1}, created_by="agent", source_root=src, confirm_snapshot=True, **FAST)
     return party
 
 
@@ -217,7 +217,7 @@ def test_attach_background_sync_e2e(tmp_path):
     out = party.run_start(
         experiment="e", title="e2e sync run", purpose="prove the background flusher",
         hypothesis="exploratory: does a spooled run arrive on the server unaided?",
-        parameters={"lr": 0.01}, created_by="agent", source_root=src, **FAST)
+        parameters={"lr": 0.01}, created_by="agent", source_root=src, confirm_snapshot=True, **FAST)
 
     script = src / "toy.py"
     script.write_text(textwrap.dedent("""

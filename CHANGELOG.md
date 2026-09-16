@@ -7,6 +7,35 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+### Fixed
+- **Code snapshots no longer capture files you did not point at.**
+  Previously a run with no `source_root` snapshotted the whole directory
+  holding the store, and collection was a filesystem walk that never
+  consulted git — so unrelated files (personal notes, agent conversation
+  logs) could be copied into a run and, through sync, into a shared store.
+
+### Changed
+- **Breaking:** `run_start` without `source_root` now records **no** code
+  snapshot instead of guessing a directory. Env lock, hardware, invocation
+  and outer-git provenance are still captured automatically.
+- Inside a git repository the snapshot is now what **git** reports —
+  tracked files plus untracked-but-unignored ones — so `.gitignore` decides
+  what belongs to the project. The extension allowlist no longer applies
+  there, which also means tracked `.cpp`/`.cu`/`.rs` sources are captured
+  at last. Secret-shaped filenames stay denied, tracked or not.
+- A non-git `source_root`, or a capture above `confirm_above_files` /
+  `confirm_above_bytes`, now requires `confirm_snapshot=True`; the refusal
+  carries a preview of exactly what would be captured. A `source_root` at
+  or above `$HOME` is refused outright.
+- `snapshot_report` now records the files that were **included**, not only
+  those excluded.
+
+### Added
+- `snapshot_preview()` — core API, `snapshot_preview` MCP tool, and
+  `mlp snapshot-preview <dir>` — shows what a capture would take without
+  writing anything, plus the delta (added / modified / removed) against the
+  snapshot already stored for an experiment.
+
 ## [0.2.2] — 2026-09-16
 
 ### Fixed
