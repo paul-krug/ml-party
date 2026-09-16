@@ -151,6 +151,13 @@ than the connection text, because MCP clients truncate server instructions
 (Claude Code at 2048 characters, silently), and a tool is the one channel an
 agent can pull on its own initiative.
 
+**You can also just ask it about ml-party.** The guides ship *inside the
+wheel*, and a `help` tool serves them — so "how do I run the demo?", "how do I
+instrument my training script?", "how do I share this store with my team?" are
+answered from the installed package, with no checkout and no browser. `help()`
+also reports every `mlp` command, the installed version, which store it is
+serving, and where to file a bug.
+
 Before the first run it will **ask which directory holds your code**. That
 directory (`source_root`) is what gets snapshotted into the store, so the
 agent shows you the file list before anything is written, and never captures

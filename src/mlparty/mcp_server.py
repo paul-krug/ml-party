@@ -262,8 +262,15 @@ def build_server(root: Path | str) -> MCPServer:
                 **_orientation(),
                 "topics": docs.topics(),
                 "cli_commands": docs.cli_commands(),
+                "project_urls": docs.project_urls(),
                 "read_a_topic": "help(topic='quickstart')",
                 "tracking_contract": "call workflow_guide() — it is not a help topic",
+                "reporting_a_bug": "use the `issues` URL above — it comes from this "
+                                   "installed package's metadata. Do NOT infer the "
+                                   "repository from directories on disk: a checkout "
+                                   "you find locally may be a fork, a stale clone, or "
+                                   "a renamed predecessor, and looks identical to the "
+                                   "real one.",
             }}
         text = docs.read(topic)
         if text is None:

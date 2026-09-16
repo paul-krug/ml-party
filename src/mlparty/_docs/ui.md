@@ -15,6 +15,13 @@ Overview | Metrics | Artifacts | Code), plus **Boards** (the gallery of all
 agent-authored boards — see {doc}`boards`), Graph (lineage DAG), Search,
 and Diff.
 
+**Timestamps are UTC by default and always carry their zone** — a store can be
+served to people in several zones, and an unlabelled local time makes two
+viewers read the same run differently. The `UTC` button in the top bar switches
+every timestamp to your own zone (and back); the choice is remembered in the
+browser, per viewer. Runs are *stored* in UTC either way, so the switch only
+changes what you read.
+
 Open runs show a liveness chip driven by the client's heartbeat: a pulsing
 **open · live** while the training process is breathing, **open · stale**
 (hover for the last-seen time) when it stopped, plain **open** for runs with

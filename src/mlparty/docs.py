@@ -46,6 +46,26 @@ def read(topic: str) -> str | None:
     return resources.files(PACKAGE).joinpath(f"{topic}.md").read_text(encoding="utf-8")
 
 
+def project_urls() -> dict[str, str]:
+    """Homepage / Issues / Documentation / Changelog, from package metadata.
+
+    The canonical answer to "where do I report this?". Without it an agent
+    infers the repository from directories on disk, and a stale clone of a
+    predecessor repo is indistinguishable from the real one.
+    """
+    from importlib.metadata import PackageNotFoundError, metadata
+
+    try:
+        entries = metadata("mlparty").get_all("Project-URL") or []
+    except PackageNotFoundError:
+        return {}
+    out = {}
+    for entry in entries:
+        label, _, url = entry.partition(",")
+        out[label.strip().lower()] = url.strip()
+    return out
+
+
 def cli_commands() -> dict[str, str]:
     """Every `mlp` command with its help text, read off the CLI itself."""
     from .cli import app  # local: cli imports the server, not vice versa

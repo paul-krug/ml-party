@@ -21,7 +21,10 @@ mlp ui                                      # → http://127.0.0.1:7327
 
 Then register the store with your agent — one command for Claude Code, a
 snippet to paste for any other MCP client — and restart the session:
-{doc}`mcp`. That page also covers [one store versus one per
+{doc}`mcp`. From then on you can ask the agent about ml-party itself: these
+guides ship inside the wheel and a `help` tool serves them, so "how do I run
+the demo?" or "how do I instrument my training script?" is answered from the
+installed package rather than from a search engine. That page also covers [one store versus one per
 project](mcp.md#one-store-or-one-per-project), which is worth deciding
 before you accumulate runs.
 

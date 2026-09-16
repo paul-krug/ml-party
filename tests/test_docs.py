@@ -45,6 +45,21 @@ def test_cli_commands_are_introspected_not_transcribed():
     assert commands["ui"], "each command carries its help text"
 
 
+def test_help_reports_where_to_file_a_bug(tmp_path):
+    """A real agent asked to file an issue found no repo in the package, searched
+    the disk, hit a stale clone of a renamed predecessor and reported against it.
+    The canonical URL was in the installed metadata all along — state the fact and
+    the agent stops guessing."""
+    urls = docs.project_urls()
+    assert urls["issues"].startswith("https://github.com/")
+    assert "homepage" in urls and "documentation" in urls
+
+    MlParty.init(tmp_path / ".mlparty")
+    index = _call(build_server(tmp_path / ".mlparty"), "help")["data"]
+    assert index["project_urls"]["issues"] == urls["issues"]
+    assert "disk" in index["reporting_a_bug"]      # warns off the filesystem guess
+
+
 def test_help_tool_serves_the_index_and_the_topics(tmp_path):
     MlParty.init(tmp_path / ".mlparty")
     server = build_server(tmp_path / ".mlparty")
