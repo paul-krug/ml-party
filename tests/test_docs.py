@@ -45,6 +45,44 @@ def test_cli_commands_are_introspected_not_transcribed():
     assert commands["ui"], "each command carries its help text"
 
 
+def test_bare_help_reads_like_a_readme_not_a_table_of_contents(tmp_path):
+    """The general failure behind every "the agent went looking on disk" report:
+    an index of topic titles makes the agent CHOOSE before it has learned anything,
+    and an agent that does not know what it is looking for cannot choose. A human
+    opening the README is oriented in one read; the first help() call must be too,
+    so the quickstart comes back in full rather than as a title."""
+    MlParty.init(tmp_path / ".mlparty")
+    server = build_server(tmp_path / ".mlparty")
+
+    index = _call(server, "help")["data"]
+    assert index["quickstart"].lstrip().startswith("# ")     # the page, not a title
+    assert "mlp demo" in index["quickstart"]
+    assert "mlp ui" in index["quickstart"]
+
+    # and one call can fetch everything, for when the agent wants to be thorough
+    everything = _call(server, "help", {"topic": "all"})["data"]
+    assert set(everything["topics"]) == set(docs.topics())
+    assert all(text.lstrip().startswith("# ") for text in everything["topics"].values())
+
+
+def test_the_demo_is_discoverable_from_the_bare_index(tmp_path):
+    """An agent asked to run the demo scanned the index, found no demo command,
+    concluded the installed package could not do it, went looking on disk and ran
+    scripts/ out of a stale checkout. Three things made that reasonable: no `mlp
+    demo` command existed, quickstart's summary described its audience instead of
+    its content, and the only 'demo' in the index was in the *boards* summary."""
+    MlParty.init(tmp_path / ".mlparty")
+    index = _call(build_server(tmp_path / ".mlparty"), "help")["data"]
+
+    assert "demo" in index["cli_commands"]                    # scannable as a command
+    assert "demo" in index["topics"]["quickstart"].lower()     # and in the topic summary
+    assert "mlp demo" in index["try_the_demo"]                 # and called out directly
+
+    # and the index tells an agent not to go looking on disk for any of this
+    warning = index["this_installed_package_is_the_source_of_truth"]
+    assert "disk" in warning and "checkout" in warning
+
+
 def test_help_reports_where_to_file_a_bug(tmp_path):
     """A real agent asked to file an issue found no repo in the package, searched
     the disk, hit a stale clone of a renamed predecessor and reported against it.
@@ -57,7 +95,8 @@ def test_help_reports_where_to_file_a_bug(tmp_path):
     MlParty.init(tmp_path / ".mlparty")
     index = _call(build_server(tmp_path / ".mlparty"), "help")["data"]
     assert index["project_urls"]["issues"] == urls["issues"]
-    assert "disk" in index["reporting_a_bug"]      # warns off the filesystem guess
+    # the "don't guess from disk" warning covers URLs and commands alike — see
+    # test_the_demo_is_discoverable_from_the_bare_index
 
 
 def test_help_tool_serves_the_index_and_the_topics(tmp_path):

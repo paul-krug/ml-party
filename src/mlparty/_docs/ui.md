@@ -2,6 +2,7 @@
 
 ```bash
 mlp ui --root <store>        # serves on 127.0.0.1:7327
+mlp demo --root <store>      # a real tracked run to look at, ~30s
 ```
 
 Localhost-bound by design; from another machine, tunnel like TensorBoard:

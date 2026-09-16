@@ -7,6 +7,26 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+### Added
+- **`mlp demo`** — the demo is now a real CLI command, so it appears in
+  `mlp --help` and in the command list `help()` reports. It was previously only
+  `python -m mlparty.demo` mentioned inside a guide, so an agent scanning for a
+  way to run it found nothing and concluded the installed package could not.
+- `help('all')` returns every guide in one call.
+
+### Changed
+- **`help()` now answers like a README instead of a table of contents.** The
+  first call returns the quickstart *in full* alongside the index. An index of
+  topic titles asks an agent to choose before it has learned anything, and an
+  agent that does not know what it is looking for cannot choose — so it went
+  looking on disk, found an unrelated ml-party checkout and ran a stale script
+  out of it. `help()` and the connection brief now also state plainly that the
+  installed package is the source of truth, and that a checkout found on disk
+  may be an entirely different release while looking identical.
+- The quickstart opens with what it covers rather than who it is for — its
+  one-line summary is derived from that opening, and the old one said nothing an
+  agent could match against "how do I run the demo?"
+
 ## [0.2.7] — 2026-09-16
 
 ### Fixed
