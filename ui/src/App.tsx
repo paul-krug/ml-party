@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
-import { Me, api } from "./api";
+import { Me, TZ_CHANGED, api, getTzMode, localTzLabel, setTzMode } from "./api";
 import { AuthCtx } from "./auth";
 import BoardPage from "./pages/BoardPage";
 import BoardsPage from "./pages/BoardsPage";
@@ -17,6 +17,15 @@ import SearchPage from "./pages/SearchPage";
 export default function App() {
   const [store, setStore] = useState<string>("");
   const [auth, setAuth] = useState<Me | null>(null);
+  const [tz, setTz] = useState(getTzMode());
+
+  // fmtDate reads the preference at render time, so re-rendering the root
+  // restamps every timestamp in the tree without remounting the pages
+  useEffect(() => {
+    const sync = () => setTz(getTzMode());
+    window.addEventListener(TZ_CHANGED, sync);
+    return () => window.removeEventListener(TZ_CHANGED, sync);
+  }, []);
 
   const refreshMe = useCallback(() => {
     api.me().then(setAuth).catch(() => setAuth({ auth_enabled: false, user: null }));
@@ -46,6 +55,15 @@ export default function App() {
           ml-<span>party</span>
         </div>
         <div className="store" title={store}>{store}</div>
+        <button
+          className="linkish tz-toggle"
+          onClick={() => setTzMode(tz === "utc" ? "local" : "utc")}
+          title={tz === "utc"
+            ? `Times are shown in UTC — switch to your local zone (${localTzLabel()})`
+            : `Times are shown in your local zone — switch to UTC`}
+        >
+          {tz === "utc" ? "UTC" : localTzLabel()}
+        </button>
         {auth.user && (
           <div className="whoami">
             <span title={`role: ${auth.user.role}`}>{auth.user.username}</span>

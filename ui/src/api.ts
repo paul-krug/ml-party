@@ -188,9 +188,56 @@ export const TYPE_SLOT: Record<string, string> = {
   project: "var(--series-4)",
 };
 
+/* Timestamps are stored UTC and shown UTC by default — a store can be served to
+ * people in several zones, and an unlabelled local time makes two viewers read
+ * the same run differently. The zone is always named, and this preference flips
+ * every timestamp in the UI to the viewer's own zone. */
+export type TzMode = "utc" | "local";
+
+const TZ_KEY = "mlp:tz";
+const TZ_EVENT = "mlp:tz-changed";
+
+let tzMode: TzMode = readTzMode();
+
+function readTzMode(): TzMode {
+  try {
+    return localStorage.getItem(TZ_KEY) === "local" ? "local" : "utc";
+  } catch {                      // private mode / storage disabled
+    return "utc";
+  }
+}
+
+export function getTzMode(): TzMode {
+  return tzMode;
+}
+
+export function setTzMode(mode: TzMode): void {
+  tzMode = mode;
+  try {
+    localStorage.setItem(TZ_KEY, mode);
+  } catch { /* preference just does not persist */ }
+  window.dispatchEvent(new Event(TZ_EVENT));
+}
+
+export const TZ_CHANGED = TZ_EVENT;
+
+/** The viewer's zone abbreviation (CEST, PDT, …) for labelling local times. */
+export function localTzLabel(d: Date = new Date()): string {
+  const part = new Intl.DateTimeFormat(undefined, { timeZoneName: "short" })
+    .formatToParts(d).find((p) => p.type === "timeZoneName");
+  return part?.value ?? "local";
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/** ISO-ish and sortable, always carrying its zone: "2026-09-16 18:45 UTC". */
 export function fmtDate(iso?: string | null): string {
   if (!iso) return "";
-  return iso.slice(0, 16).replace("T", " ");
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso.slice(0, 16).replace("T", " ");
+  if (tzMode === "utc") return `${d.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} `
+    + `${pad(d.getHours())}:${pad(d.getMinutes())} ${localTzLabel(d)}`;
 }
 
 export function fmtAgo(iso?: string | null): string {

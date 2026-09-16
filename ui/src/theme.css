@@ -83,6 +83,10 @@ pre {
 .topbar .brand { font-weight: 700; font-size: 15px; }
 .topbar .brand span { color: var(--accent); }
 .topbar .store { margin-left: auto; color: var(--muted); font-size: 12px; }
+.topbar .tz-toggle {
+  margin-left: 14px; font-size: 12px; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px;
+}
 
 .sidebar {
   background: var(--surface);

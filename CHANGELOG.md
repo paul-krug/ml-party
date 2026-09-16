@@ -7,6 +7,24 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+### Fixed
+- **Timestamps in the UI were unlabelled UTC.** `fmtDate` sliced the ISO string
+  instead of parsing it, so every absolute time rendered UTC digits with no zone
+  shown anywhere — while "2h ago" and the board gallery *did* parse and showed
+  local time, so two views could disagree about when the same thing happened.
+  Times are now **UTC by default and always carry their zone**, with a top-bar
+  toggle that switches the whole UI to the viewer's own zone; the choice is
+  remembered per browser. Storage is unchanged — runs were always recorded UTC.
+
+### Added
+- `help()` reports **where to file a bug** — Homepage / Issues / Documentation /
+  Changelog, read from the installed package's metadata. An agent asked to
+  report a problem previously found no repository in the package, searched the
+  filesystem, and drew its conclusion from a stale local clone of a renamed
+  predecessor. The index now also warns agents off inferring the repository from
+  directories on disk: a fork, an old clone and the real thing look identical
+  there.
+
 ## [0.2.6] — 2026-09-16
 
 ### Added

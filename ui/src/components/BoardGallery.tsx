@@ -1,12 +1,9 @@
 import { Link } from "react-router-dom";
-import { BoardInfo } from "../api";
+import { BoardInfo, fmtDate } from "../api";
 
-function fmtWhen(iso: string) {
-  return new Date(iso).toLocaleString(undefined, {
-    year: "2-digit", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
+// the shared formatter, so a board and its run never disagree about when it
+// happened — this one rendered local time while every other view showed UTC
+const fmtWhen = fmtDate;
 
 export default function BoardGallery({ boards, showCarrier = true }: {
   boards: BoardInfo[]; showCarrier?: boolean;
