@@ -19,7 +19,11 @@ lives where it does:
 
 So the connection text is a router, not the manual, and a test pins it under
 budget. If you are writing an MCP server with a workflow to teach, this is the
-trap: a long `instructions` string looks delivered and is not.
+trap: a long `instructions` string looks delivered and is not. The spec calls
+the field *"a hint... MAY be added to the system prompt"* — a client may cap it
+or ignore it outright and still be conformant, and capping is sound, since
+server instructions are untrusted text entering the system prompt. Note the cap
+applies **per tool description** too.
 
 ## One store, or one per project?
 

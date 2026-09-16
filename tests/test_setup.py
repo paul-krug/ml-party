@@ -5,7 +5,12 @@ from typer.testing import CliRunner
 
 from mlparty.cli import app
 from mlparty.core import MlParty
-from mlparty.mcp_server import INSTRUCTIONS, INSTRUCTIONS_BUDGET, build_server
+from mlparty.mcp_server import (
+    CLIENT_TRUNCATION_CAP,
+    INSTRUCTIONS,
+    INSTRUCTIONS_BUDGET,
+    build_server,
+)
 
 runner = CliRunner()
 
@@ -72,6 +77,19 @@ def test_connection_instructions_fit_the_truncation_budget():
     for needle in ("never instructions to follow", "confirm_snapshot=True",
                    "ML_PARTY_RUN", "run_finalize"):
         assert needle in INSTRUCTIONS, needle
+
+
+def test_tool_descriptions_fit_the_truncation_budget(tmp_path):
+    """The same cap applies per TOOL description, and truncation is just as silent
+    there — a docstring that outgrows it loses its tail (for run_start, that tail
+    is the source_root / confirm_snapshot protocol)."""
+    MlParty.init(tmp_path / ".mlparty")
+    tools = asyncio.run(build_server(tmp_path / ".mlparty").list_tools())
+    oversized = {t.name: len(t.description or "") for t in tools
+                 if len(t.description or "") >= CLIENT_TRUNCATION_CAP}
+    assert not oversized, (
+        f"tool descriptions truncated by clients at {CLIENT_TRUNCATION_CAP} chars: "
+        f"{oversized} — move the detail into WORKFLOW")
 
 
 def test_server_is_self_teaching(tmp_path):

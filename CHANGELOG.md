@@ -24,7 +24,10 @@ history and pull requests; entries land here when they are release-worthy.
   fallback needed the *user* to already suspect the agent was under-briefed.
   Connection `instructions` are now a short router whose first line is *call
   `workflow_guide()`*, kept under budget by a test so it cannot silently
-  regrow.
+  regrow. The cap is per-client and unspecified — the MCP schema calls
+  `instructions` a hint clients *may* use — so the router is built to survive
+  any cap, not just Claude Code's. Tool descriptions are capped the same way
+  and are now pinned by a test too.
 - Orientation: `workflow_guide` reports the store root and node counts, and
   `run_start` echoes the store root back — an agent could previously only
   discover which store it served by reading the client's config off disk, and

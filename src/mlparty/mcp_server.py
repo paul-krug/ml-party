@@ -19,10 +19,14 @@ from .store import NodeNotFound
 
 ENV_STORE = "ML_PARTY_STORE"
 
-# MCP clients truncate server `instructions` — Claude Code cuts at exactly 2048
-# characters, mid-word and silently. So `instructions` is a ROUTER (kept under
-# this budget, enforced by tests) and the full manual below is served by the
-# workflow_guide tool, the one channel an agent can pull on its own initiative.
+# The MCP schema calls `instructions` a "hint" that clients MAY add to the system
+# prompt — no delivery guarantee, so clients cap it: Claude Code at exactly 2048
+# chars, mid-word, silently, and the same per tool description. Hence
+# `instructions` is only a ROUTER (kept under budget by tests) and the manual
+# below is served by workflow_guide — a tool being the one teaching channel an
+# agent can pull on its own initiative. The cap is per-client and undocumented in
+# the spec, so the router must survive ANY cap: the pointer comes in line one.
+CLIENT_TRUNCATION_CAP = 2048
 INSTRUCTIONS_BUDGET = 1800
 
 WORKFLOW = """\

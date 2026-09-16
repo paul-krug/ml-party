@@ -237,7 +237,25 @@ originally shipped as the server's MCP `instructions`, which clients cap —
 Claude Code at exactly 2048 characters, mid-word, with no signal to either
 side — so a 6.5k-character manual was delivered 31% complete to every agent
 that connected. **A teaching channel that can be silently truncated cannot
-hold the contract.** Of the three channels MCP offers, only a tool is both
+hold the contract.**
+
+The cap is the client behaving correctly, not a bug to route around. The MCP
+schema defines `instructions` as *"a hint to the model... MAY be added to the
+system prompt"* — no length limit, but no delivery guarantee either, so a
+client that drops it entirely is conformant and truncating is more generous
+than the spec requires. And capping is right on the merits: server
+instructions are untrusted third-party text injected into the system prompt,
+so an uncapped field lets any connected server flood the context. That is the
+same reasoning we apply to retrieved node content (§ trust model); the client
+is doing to us what we tell agents to do with notes. The error was ours —
+putting a contract in a best-effort field.
+
+Two consequences for anyone editing these strings. The cap is **per client and
+absent from the spec**, so 2048 is not a portable number: the router must
+survive *any* cap, which is why the pointer to `workflow_guide` is in the first
+line rather than merely inside the budget. And the same cap applies **per tool
+description**, truncated just as silently — `run_start`'s docstring is the one
+that creeps toward it, so both limits are pinned by tests. Of the three channels MCP offers, only a tool is both
 complete and reachable on the agent's own initiative: `instructions` is
 capped, and prompts are user-invoked slash commands, so falling back to one
 requires the *user* to already suspect the agent is under-briefed. So
