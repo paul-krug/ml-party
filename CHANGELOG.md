@@ -7,6 +7,29 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+### Fixed
+- **The self-teaching server was not teaching.** The tracking workflow shipped
+  as the MCP `instructions` string, and clients cap that — Claude Code at
+  exactly 2048 characters, mid-word and silently. At 6.5k characters only the
+  first 31% arrived: an agent learned to *open* a run, then never received the
+  `ML_PARTY_STORE`/`ML_PARTY_RUN` handshake, the `mlparty.attach()` snippet,
+  the finalize contract, or the `confirm_snapshot` guardrail. Neither side
+  could tell the brief had been cut.
+
+### Added
+- `workflow_guide` tool — returns the full manual, and the store root plus what
+  the store already holds. A tool is the only teaching channel an agent can
+  pull on its own initiative: `instructions` is truncated, and MCP prompts
+  (`track_training`) are user-invoked slash commands, so the designated
+  fallback needed the *user* to already suspect the agent was under-briefed.
+  Connection `instructions` are now a short router whose first line is *call
+  `workflow_guide()`*, kept under budget by a test so it cannot silently
+  regrow.
+- Orientation: `workflow_guide` reports the store root and node counts, and
+  `run_start` echoes the store root back — an agent could previously only
+  discover which store it served by reading the client's config off disk, and
+  would happily write into one nobody was watching.
+
 ## [0.2.4] — 2026-09-16
 
 ### Added

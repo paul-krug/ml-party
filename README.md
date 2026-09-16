@@ -144,9 +144,12 @@ verdict. Click into it: Overview | Metrics | Artifacts | Code.
 
 ## Then just tell your agent
 
-The server is **self-teaching**: the full tracking workflow rides in its MCP
-instructions, so *"use ml-party for this run"* is all an agent needs to
-hear.
+The server is **self-teaching**: *"use ml-party for this run"* is all an agent
+needs to hear. Connecting hands it a short brief pointing at a
+`workflow_guide` tool that returns the full operating manual — a tool rather
+than the connection text, because MCP clients truncate server instructions
+(Claude Code at 2048 characters, silently), and a tool is the one channel an
+agent can pull on its own initiative.
 
 Before the first run it will **ask which directory holds your code**. That
 directory (`source_root`) is what gets snapshotted into the store, so the

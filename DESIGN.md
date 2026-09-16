@@ -226,11 +226,24 @@ Contract refusals return as data (`{ok: false, refusal: {...}}`), never as
 protocol errors.
 
 **Zero-terminal setup is a product requirement**: `mlp init` writes/merges
-`./.mcp.json` so agents in the project pick the server up automatically;
-the full workflow (prior-art query → pre-register → env-launch with
-instrumentation snippet → finalize → distill) ships as the server's MCP
-`instructions` and as a `track_training` prompt. "Use ml-party for this
-run" is all a cold agent needs to hear — validated on unbriefed agents.
+`./.mcp.json` so agents in the project pick the server up after a one-time
+approval; the full workflow (orient → prior-art query → pre-register →
+env-launch with instrumentation snippet → finalize → distill) is served by
+the `workflow_guide` tool. "Use ml-party for this run" is all a cold agent
+needs to hear.
+
+The channel choice is load-bearing, and we got it wrong first. The workflow
+originally shipped as the server's MCP `instructions`, which clients cap —
+Claude Code at exactly 2048 characters, mid-word, with no signal to either
+side — so a 6.5k-character manual was delivered 31% complete to every agent
+that connected. **A teaching channel that can be silently truncated cannot
+hold the contract.** Of the three channels MCP offers, only a tool is both
+complete and reachable on the agent's own initiative: `instructions` is
+capped, and prompts are user-invoked slash commands, so falling back to one
+requires the *user* to already suspect the agent is under-briefed. So
+`instructions` is now a router — a summary whose first line is *call
+`workflow_guide()`*, held under budget by a test — and `track_training`
+remains as the user-facing entry point.
 
 ### 8.2 The two-writer architecture
 

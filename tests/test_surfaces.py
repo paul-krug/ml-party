@@ -15,6 +15,7 @@ from mlparty.mcp_server import build_server
 FAST = {"python_exe": "/nonexistent/python"}
 
 EXPECTED_TOOLS = {
+    "workflow_guide",
     "project_ensure", "experiment_ensure", "experiment_list",
     "run_start", "run_log_metric", "run_log_artifact", "experiment_log_artifact",
     "run_finalize", "run_fail",
@@ -138,6 +139,15 @@ def test_mcp_tools_registered_and_refusals_are_data(proj):
     }))
     text = str(res)
     assert "refusal" in text and "purpose" in text
+    # a successful start echoes the store root back: an agent otherwise has no
+    # way to see WHICH store it just wrote into, and stores are per-machine
+    ok = asyncio.run(server.call_tool("run_start", {
+        "experiment": "e", "title": "echo check",
+        "purpose": "check the store root is echoed to the agent",
+        "hypothesis": "exploratory: does run_start orient the caller?",
+        "parameters": {"lr": 1}, "source_root": str(src), "confirm_snapshot": True,
+    }))
+    assert str((src / ".mlparty").resolve()) in str(ok)
 
 
 def test_client_attach_toy_training(proj):

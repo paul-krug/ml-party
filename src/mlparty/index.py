@@ -219,6 +219,10 @@ class Index:
         args.append(limit)
         return [json.loads(r["doc"]) for r in self._conn.execute(sql, args).fetchall()]
 
+    def count_by_type(self) -> dict[str, int]:
+        return {r["type"]: r["n"] for r in self._conn.execute(
+            "SELECT type, COUNT(*) AS n FROM nodes GROUP BY type").fetchall()}
+
     def find_by_title(self, type: str, title: str) -> dict | None:
         row = self._conn.execute(
             "SELECT doc FROM nodes WHERE type = ? AND title = ? LIMIT 1", (type, title)

@@ -93,9 +93,9 @@ session started in a different directory than the one holding `.mcp.json`
 ## 5. Stop there
 
 Do not start tracking runs in this session. After the restart the server
-teaches its own workflow through its MCP instructions — including asking the
-user which directory may be snapshotted, which is their decision to make,
-not one to pre-empt here.
+teaches its own workflow: the connection brief points at a `workflow_guide`
+tool returning the full manual — including asking the user which directory may
+be snapshotted, which is their decision to make, not one to pre-empt here.
 
 Optional, if the user wants something to look at immediately:
 
