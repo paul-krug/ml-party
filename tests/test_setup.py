@@ -79,6 +79,30 @@ def test_connection_instructions_fit_the_truncation_budget():
         assert needle in INSTRUCTIONS, needle
 
 
+def test_unbriefed_agent_is_nudged_through_tool_responses(tmp_path):
+    """The last line of defence. A client may truncate `instructions` — or drop
+    the field entirely and still be spec-conformant, since it is defined as a
+    hint clients MAY use. Then the router never arrives and nothing points at the
+    guide. Tool RESPONSES are the one channel that cannot be truncated or
+    dropped, so every call carries the nudge until the guide has been read."""
+    MlParty.init(tmp_path / ".mlparty")
+    server = build_server(tmp_path / ".mlparty")
+
+    def call(name, args):
+        result = asyncio.run(server.call_tool(name, args))
+        return getattr(result, "structured_content", None) \
+            or json.loads(result.content[0].text)
+
+    assert "workflow_guide()" in call("experiment_list", {})["guide"]
+    # a refusal carries it too — a confused agent is exactly who needs it
+    refused = call("run_start", {"experiment": "e", "title": "t", "purpose": "x",
+                                 "hypothesis": "y", "parameters": {}})
+    assert not refused["ok"] and "workflow_guide()" in refused["guide"]
+
+    call("workflow_guide", {})
+    assert "guide" not in call("experiment_list", {})  # self-extinguishing
+
+
 def test_tool_descriptions_fit_the_truncation_budget(tmp_path):
     """The same cap applies per TOOL description, and truncation is just as silent
     there — a docstring that outgrows it loses its tail (for run_start, that tail

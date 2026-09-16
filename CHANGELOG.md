@@ -28,6 +28,12 @@ history and pull requests; entries land here when they are release-worthy.
   `instructions` a hint clients *may* use — so the router is built to survive
   any cap, not just Claude Code's. Tool descriptions are capped the same way
   and are now pinned by a test too.
+- A backstop that does not depend on the connection brief arriving at all:
+  since a client may legitimately drop `instructions` outright, **every tool
+  response carries a nudge to call `workflow_guide()` until it has been
+  called** — refusals included, since a confused agent is exactly who needs it.
+  Tool responses cannot be truncated or dropped, so this is the channel that
+  actually guarantees delivery.
 - Orientation: `workflow_guide` reports the store root and node counts, and
   `run_start` echoes the store root back — an agent could previously only
   discover which store it served by reading the client's config off disk, and

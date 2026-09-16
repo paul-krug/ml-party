@@ -14,7 +14,8 @@ lives where it does:
 | Channel | Reaches the agent? |
 | --- | --- |
 | `workflow_guide` **tool** | **Yes** — the full manual, pulled on the agent's own initiative. Clients may defer tool *schemas*, but names stay visible. |
-| MCP `instructions` | Partly — clients cap it (Claude Code at exactly 2048 chars, mid-word, silently). Kept deliberately short: a summary whose first line is *call `workflow_guide()`*. |
+| **Tool responses** | **Yes, unconditionally** — every response carries a nudge to call `workflow_guide()` until it has been called. Nothing truncates or drops a response, so this is the backstop. |
+| MCP `instructions` | Not guaranteed. Clients cap it (Claude Code at exactly 2048 chars, mid-word, silently) and **may drop it outright** — the spec calls it a hint clients *MAY* use. Kept short: a summary whose first line is *call `workflow_guide()`*. |
 | `track_training` **prompt** | Only if you invoke it — prompts are user-triggered slash commands, so an agent cannot reach for one. |
 
 So the connection text is a router, not the manual, and a test pins it under

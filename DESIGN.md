@@ -255,7 +255,16 @@ absent from the spec**, so 2048 is not a portable number: the router must
 survive *any* cap, which is why the pointer to `workflow_guide` is in the first
 line rather than merely inside the budget. And the same cap applies **per tool
 description**, truncated just as silently — `run_start`'s docstring is the one
-that creeps toward it, so both limits are pinned by tests. Of the three channels MCP offers, only a tool is both
+that creeps toward it, so both limits are pinned by tests.
+
+That still leaves a hole, because "MAY be added to the system prompt" permits a
+client to drop `instructions` altogether: then no router arrives and nothing
+points at the guide. So the backstop is the one channel that cannot be
+truncated or dropped — **the tool response itself**. Every response carries a
+nudge to call `workflow_guide()` until it has been called, which makes the
+teaching independent of whether the connection brief survived. It is
+self-extinguishing, and it reaches a confused agent at exactly the moment it is
+confused, since refusals carry it too. Of the three channels MCP offers, only a tool is both
 complete and reachable on the agent's own initiative: `instructions` is
 capped, and prompts are user-invoked slash commands, so falling back to one
 requires the *user* to already suspect the agent is under-briefed. So

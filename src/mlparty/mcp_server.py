@@ -167,11 +167,30 @@ Contract refusals come back as data — {ok: false, refusal: {missing, invalid}}
 """
 
 
+GUIDE_NUDGE = (
+    "You have not called workflow_guide() this session. The connection brief is "
+    "truncated by some MCP clients and dropped entirely by others, so you may be "
+    "missing the contract — the code-capture protocol, the ML_PARTY_STORE/"
+    "ML_PARTY_RUN handshake, and what run_finalize requires. Call workflow_guide() "
+    "before relying on what you think you know."
+)
+
+
 def build_server(root: Path | str) -> MCPServer:
     party = MlParty.open(root)
     mcp = MCPServer("ml-party", instructions=INSTRUCTIONS)
+    guide_read = False
 
     def guarded(fn, /, **kwargs: Any) -> dict:
+        # A tool RESPONSE is the one teaching channel no client truncates or
+        # drops, so an unbriefed agent gets told on every call until it reads
+        # the guide. Self-extinguishing: the nudge stops once it has.
+        out = _guarded(fn, **kwargs)
+        if not guide_read:
+            out["guide"] = GUIDE_NUDGE
+        return out
+
+    def _guarded(fn, /, **kwargs: Any) -> dict:
         try:
             return {"ok": True, "data": fn(**kwargs)}
         except ContractViolation as e:
@@ -201,6 +220,8 @@ def build_server(root: Path | str) -> MCPServer:
         first ml-party call in a session; everything the contract requires (the
         code-capture protocol, the ML_PARTY_RUN env handshake, the finalize
         contract) is here rather than there."""
+        nonlocal guide_read
+        guide_read = True
         orient = _orientation()
         empty = not any(orient["counts"].values())
         return {"ok": True, "data": {
