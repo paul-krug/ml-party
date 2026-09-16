@@ -3,8 +3,9 @@
 ## Reporting a vulnerability
 
 Please use GitHub's **"Report a vulnerability"** (Security tab → private
-advisory) rather than a public issue. While the repository is private,
-contact the maintainer directly.
+advisory) rather than a public issue. Private reporting is enabled on the
+repository; you will get an acknowledgement on a best-effort basis (this
+is a small project, not a staffed security team).
 
 ## Trust model
 

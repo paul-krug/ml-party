@@ -25,12 +25,29 @@ Agent-native ML experiment tracking + lineage/knowledge substrate. Package
 | What ships when? | the repo's GitHub Project |
 | What changed? | [CHANGELOG.md](CHANGELOG.md) |
 
-**The doc-sync rule: every feature commit updates the docs it touches —
-before push, not as a later pass.** New user-visible behavior lands with its
-`docs/` section in the same push; design/invariant changes update DESIGN.md;
-notable changes get a CHANGELOG line under `[Unreleased]`. Never duplicate
-prose across these files — link instead; docs/ describes what the code
-*does* (plans live in the GitHub Project only).
+**The doc-sync rule: every PR updates the docs it touches — before push,
+not as a later pass.** New user-visible behavior lands with its `docs/`
+section and its README/quickstart consequences in the same PR;
+design changes update DESIGN.md; changes to the trust model update
+SECURITY.md; notable changes get a CHANGELOG line under `[Unreleased]`.
+Never duplicate prose across these files — link instead; docs/ describes
+what the code *does* (plans live in the GitHub Project only).
+
+Run the **[`doc-sync`](.agents/skills/doc-sync/SKILL.md) skill before
+opening any PR** — it is the procedure for that rule: audit every doc
+surface the change touches, then update what it flags. The audit is cheap
+and always run; "no doc impact" is a valid result worth recording. Stale
+docs block the PR.
+
+## Skills
+
+Reusable agent procedures live in `.agents/skills/<name>/SKILL.md` — the
+portable Agent Skills format, so any skills-aware client can run them.
+Read and follow one when the task matches its trigger.
+
+| Skill | When to use |
+| --- | --- |
+| [`doc-sync`](.agents/skills/doc-sync/SKILL.md) | Audit + update the docs a change touches — **before every PR**. |
 
 ## Environment & commands
 
@@ -38,7 +55,7 @@ prose across these files — link instead; docs/ describes what the code
 - Node ≥ 20 for UI builds (`cd ui && npm install` once).
 
 ```bash
-.venv/bin/python -m pytest tests/ -q          # full suite, ~10 s
+.venv/bin/python -m pytest tests/ -q          # full suite, ~25 s
 .venv/bin/ruff check src tests scripts        # lint gate (CI-enforced)
 cd ui && npm run build                        # UI bundle
 .venv/bin/python -m sphinx -b html docs docs/_build             # docs site
@@ -56,10 +73,14 @@ build is CI-gated.
   on green CI (ruff + pytest 3.11–3.14 + UI build + docs build + docker
   smoke); squash-merge single-purpose PRs. Small, single-purpose commits
   with conventional-commit-ish prefixes (`feat(ui):`, `fix:`, `docs:`).
-  Branch protection enforcement is queued on the repo going public
-  (plan-gated on private free repos — see issue #9).
-- 0.x semver, tags at phase completion, CHANGELOG under `[Unreleased]` as
-  you go.
+  **`main` is protected and enforced for everyone, admins included** —
+  direct pushes are rejected; all eight checks must pass and the branch
+  must be current with `main` before a merge is possible.
+- 0.x semver; releases ship by bumping the version in `pyproject.toml`,
+  moving `[Unreleased]` entries into a dated CHANGELOG section, then
+  tagging `vX.Y.Z` — the tag triggers `release.yml`, which bundles the UI
+  into the wheel and publishes to PyPI via OIDC trusted publishing (no
+  stored token). Add CHANGELOG lines under `[Unreleased]` as you go.
 - Store writes are journal-first and knowledge is append-only — never add a
   write path that mutates nodes destructively or bypasses the journal.
 - Tests: pass `python_exe="/nonexistent/python"` to `run_start` to skip the

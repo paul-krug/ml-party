@@ -7,6 +7,11 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+### Added
+- The live demo run ships with the package: `python -m mlparty.demo`
+  (previously a repo-only script), so a `pip install mlparty` has a real
+  run to watch immediately.
+
 ## [0.2.0] — 2026-09-16, first public release
 
 Everything ml-party ships with:

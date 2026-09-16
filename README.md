@@ -6,6 +6,10 @@
   <a href="https://github.com/paul-krug/ml-party/actions/workflows/ci.yml"><img
     src="https://github.com/paul-krug/ml-party/actions/workflows/ci.yml/badge.svg"
     alt="ci"></a>
+  <a href="https://pypi.org/project/mlparty/"><img
+    src="https://img.shields.io/pypi/v/mlparty" alt="pypi"></a>
+  <a href="https://paul-krug.github.io/ml-party/"><img
+    src="https://img.shields.io/badge/docs-user%20guide-blue" alt="docs"></a>
 </p>
 
 ![ml-party in 40 seconds: connect an agent over MCP, let it track a sweep, watch the dashboard live, ask questions weeks later](.github/media/mlparty.gif)
@@ -59,17 +63,15 @@ Core ideas:
 ## Quickstart
 
 **Requirements:** Linux or macOS (Windows via WSL — the store relies on
-POSIX file locking), Python ≥ 3.11, and Node ≥ 20 for the one-time web-UI
-build.
+POSIX file locking) and Python ≥ 3.11. The web UI ships prebuilt in the
+wheel; nothing to compile.
 
 ```bash
-git clone https://github.com/paul-krug/ml-party && cd ml-party
-python -m venv .venv && .venv/bin/pip install -e .
-(cd ui && npm install && npm run build)     # web UI bundle, once
+pip install mlparty
 
-.venv/bin/mlp init --root .mlparty          # create a store (+ MCP registration)
-.venv/bin/python scripts/demo_live_run.py & # a real run: contract + live metrics
-.venv/bin/mlp ui                            # → http://127.0.0.1:7327
+mlp init --root .mlparty                    # create a store (+ MCP registration)
+python -m mlparty.demo &                    # a real run: contract + live metrics
+mlp ui                                      # → http://127.0.0.1:7327
 ```
 
 Open the browser: the demo run is streaming its loss curve live. It went
@@ -118,6 +120,21 @@ lineage graph, search, and diff. Remote box → tunnel like TensorBoard:
 `ssh -L 7327:localhost:7327 <box>`. For a shared server with logins and
 sync ingest, see the [deployment guide](https://paul-krug.github.io/ml-party/deploy.html)
 and the [remote-tracking guide](https://paul-krug.github.io/ml-party/remote.html).
+
+## From source
+
+For development, or to run an unreleased revision — needs Node ≥ 20, since
+the UI bundle is built rather than downloaded:
+
+```bash
+git clone https://github.com/paul-krug/ml-party && cd ml-party
+python -m venv .venv && .venv/bin/pip install -e .
+(cd ui && npm install && npm run build)     # web UI bundle, once
+.venv/bin/python -m pytest tests/ -q
+```
+
+Contributions go through [AGENTS.md](AGENTS.md): feature branches, PR to
+`main`, green CI, and a [doc-sync](.agents/skills/doc-sync/SKILL.md) pass.
 
 ## Design
 

@@ -7,18 +7,20 @@ that agents write (over MCP) and query, and that humans read live (CLI +
 web UI) — that also happens to be a full local tracker: metrics, artifacts,
 checkpoints, reproducibility, all stored locally.
 
-Linux/macOS (Windows via WSL), Python ≥ 3.11, Node ≥ 20 for the one-time
-web-UI build:
+Linux/macOS (Windows via WSL), Python ≥ 3.11. The web UI ships prebuilt in
+the wheel:
 
 ```bash
-git clone https://github.com/paul-krug/ml-party && cd ml-party
-python -m venv .venv && .venv/bin/pip install -e .
-(cd ui && npm install && npm run build)     # web UI bundle, once
+pip install mlparty
 
-.venv/bin/mlp init --root .mlparty          # create a store (+ MCP registration)
-.venv/bin/python scripts/demo_live_run.py & # a real run: contract + live metrics
-.venv/bin/mlp ui                            # → http://127.0.0.1:7327
+mlp init --root .mlparty                    # create a store (+ MCP registration)
+python -m mlparty.demo &                    # a real run: contract + live metrics
+mlp ui                                      # → http://127.0.0.1:7327
 ```
+
+To develop against a checkout instead, see
+[From source](https://github.com/paul-krug/ml-party#from-source) (adds Node
+≥ 20 for the UI build).
 
 From there: agents pick up the MCP server automatically and it teaches them
 the workflow ({doc}`mcp`); training scripts attach as the second writer
