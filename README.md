@@ -133,8 +133,9 @@ python -m venv .venv && .venv/bin/pip install -e .
 .venv/bin/python -m pytest tests/ -q
 ```
 
-Contributions go through [AGENTS.md](AGENTS.md): feature branches, PR to
-`main`, green CI, and a [doc-sync](.agents/skills/doc-sync/SKILL.md) pass.
+Contributions: [CONTRIBUTING.md](CONTRIBUTING.md) for the flow and the
+maintainer-only paths, [AGENTS.md](AGENTS.md) for conventions,
+[SECURITY.md](SECURITY.md) for the trust model.
 
 ## Design
 

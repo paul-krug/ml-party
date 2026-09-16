@@ -7,6 +7,14 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+### Added
+- Repository-level security policy: SECURITY.md documents the
+  agent-instruction supply chain (instruction files are read by AI agents
+  as direction, so editing them is a prompt-injection vector) and the
+  gates against it; `CONTRIBUTING.md` states that PRs from outside
+  contributors touching those paths are closed automatically, enforced by
+  a new guard workflow plus CODEOWNERS.
+
 ## [0.2.1] — 2026-09-16
 
 ### Added

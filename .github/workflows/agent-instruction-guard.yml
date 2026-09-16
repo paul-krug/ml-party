@@ -1,0 +1,119 @@
+name: agent-instruction guard
+
+# Flags any PR that edits an agent-instruction file (a file an AI coding
+# agent reads and acts on) or a gate that protects them, and auto-closes
+# such a PR from an untrusted contributor.
+# See SECURITY.md and CONTRIBUTING.md.
+#
+# SECURITY NOTE — why pull_request_target:
+#   `pull_request` from a fork gets a read-only token and cannot label or
+#   close, so this needs `pull_request_target`, which runs with the BASE
+#   repo's write token. That is only safe because this workflow NEVER
+#   checks out or executes PR code — it reads the changed-file list and
+#   the author association from the API. Do not add a checkout of the PR
+#   head here, and never interpolate PR-controlled text into a shell.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: agent-instruction-guard-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const LABEL = 'agent-instruction-change';
+            const MARKER = '<!-- agent-instruction-guard -->';
+            const pr = context.payload.pull_request;
+            const { owner, repo } = context.repo;
+            const base = `${context.serverUrl}/${owner}/${repo}/blob/main`;
+
+            const TRUSTED = ['OWNER', 'MEMBER', 'COLLABORATOR'];
+            const isExternal = !TRUSTED.includes(pr.author_association);
+
+            // Tier 1 — instruction + gate paths. An edit here reaches a
+            // maintainer's agent, or opens the gates. External PRs closed.
+            const isInstruction = (f) =>
+              f === 'AGENTS.md' ||
+              f === 'CLAUDE.md' ||
+              f.startsWith('.agents/') ||
+              f === 'SKILL.md' || f.endsWith('/SKILL.md') ||
+              f.startsWith('.github/');
+
+            // Tier 2 — instruction text that ships to users' agents.
+            // Legitimate feature work touches this, so: flag, never close.
+            const isShippedInstruction = (f) =>
+              f === 'src/mlparty/mcp_server.py';
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner, repo, pull_number: pr.number, per_page: 100,
+            });
+            const names = files.map(f => f.filename);
+            const instruction = names.filter(isInstruction);
+            const shipped = names.filter(isShippedInstruction);
+            if (instruction.length === 0 && shipped.length === 0) {
+              core.info('No agent-instruction paths touched; nothing to do.');
+              return;
+            }
+            core.warning(`Agent-instruction paths touched: ${[...instruction, ...shipped].join(', ')}`);
+
+            await github.rest.issues.addLabels({
+              owner, repo, issue_number: pr.number, labels: [LABEL],
+            });
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner, repo, issue_number: pr.number, per_page: 100 },
+            );
+            const alreadyCommented = comments.some(c => c.body.includes(MARKER));
+            const list = [...instruction, ...shipped].map(f => `- \`${f}\``).join('\n');
+
+            if (instruction.length > 0 && isExternal) {
+              if (!alreadyCommented) {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: pr.number,
+                  body: `${MARKER}\n` +
+                    `Thanks for the interest — but this PR edits ` +
+                    `**agent-instruction files**, which AI coding agents ` +
+                    `read and act on:\n\n${list}\n\n` +
+                    `Per the [contribution policy](${base}/CONTRIBUTING.md#agent-instruction-files-are-maintainer-only) ` +
+                    `and [security policy](${base}/SECURITY.md#threat-model-the-agent-instruction-supply-chain), ` +
+                    `changes to these paths are **maintainer-only**, and PRs ` +
+                    `touching them from outside contributors are closed ` +
+                    `automatically. This is not a judgement of your change — ` +
+                    `it is how we keep a prompt-injection payload from ` +
+                    `reaching a maintainer's agent.\n\n` +
+                    `To propose a change here, please **open an issue** ` +
+                    `describing it and a maintainer will carry it in.`,
+                });
+              }
+              if (pr.state === 'open') {
+                await github.rest.pulls.update({
+                  owner, repo, pull_number: pr.number, state: 'closed',
+                });
+                core.setFailed(
+                  'Closed: agent-instruction change from an outside contributor.',
+                );
+              }
+            } else if (!alreadyCommented) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: pr.number,
+                body: `${MARKER}\n` +
+                  `This PR touches **agent-instruction paths**:\n\n${list}\n\n` +
+                  `Review these as instructions an agent will execute, not as ` +
+                  `prose — read every added line for injected direction. AI ` +
+                  `review of these paths is advisory only; a human decides ` +
+                  `(see [SECURITY.md](${base}/SECURITY.md)).`,
+              });
+            }

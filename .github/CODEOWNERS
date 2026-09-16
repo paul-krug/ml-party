@@ -1,0 +1,33 @@
+# Code owners for ml-party.
+#
+# Gates who must approve changes to security-sensitive paths. Note that
+# CODEOWNERS only *blocks a merge* when branch protection on `main` has
+# "Require review from Code Owners" enabled. That setting is currently
+# OFF, because with a single maintainer it would block every PR (nobody
+# can approve their own). It is listed here so the ownership is declared,
+# review requests route correctly, and the rule becomes enforceable the
+# moment a second maintainer exists. Until then the load-bearing gates
+# are: merging requires write access, and the agent-instruction guard
+# workflow. See SECURITY.md.
+
+# --- Agent-instruction files -------------------------------------------
+# Read and ACTED ON by AI coding agents working in this repo. A malicious
+# edit is prompt injection against contributors' own agents, not against
+# the shipped package.
+/AGENTS.md      @paul-krug
+/CLAUDE.md      @paul-krug
+/.agents/       @paul-krug
+**/SKILL.md     @paul-krug
+
+# --- Shipped agent instructions ----------------------------------------
+# The MCP server's instruction text travels in the wheel to every agent
+# connected to any ml-party store — the widest-reach instruction surface
+# in the repo.
+/src/mlparty/mcp_server.py  @paul-krug
+
+# --- The gates themselves ----------------------------------------------
+# Owning .github/** keeps an attacker from editing the gate open in the
+# same PR, and covers release.yml — which publishes to PyPI under this
+# project's trusted-publisher identity. Keep last so it wins for
+# everything under .github/.
+/.github/       @paul-krug
