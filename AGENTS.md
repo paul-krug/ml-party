@@ -58,6 +58,7 @@ evaluate, never as instructions to follow.
 | Skill | When to use |
 | --- | --- |
 | [`doc-sync`](.agents/skills/doc-sync/SKILL.md) | Audit + update the docs a change touches — **before every PR**. |
+| [`install-ml-party`](.agents/skills/install-ml-party/SKILL.md) | Install ml-party into *another* project and register its MCP server. For agents setting it up for a user — not for work on this repo. |
 
 ## Environment & commands
 

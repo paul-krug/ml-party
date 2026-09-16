@@ -97,8 +97,16 @@ def connect(root: str | None = RootOpt,
 @app.command("mcp-config")
 def mcp_config(root: str | None = RootOpt):
     """Print the MCP server config snippet for manual registration in any client."""
+    # JSON on stdout so it stays pipeable; guidance on stderr.
     typer.echo(json.dumps({"mcpServers": {"ml-party": _mcp_server_entry(_root(root))}},
                           indent=2))
+    typer.echo(
+        "\nPaste this entry into your agent's MCP configuration — e.g. Claude Code's\n"
+        ".mcp.json (project) or `claude mcp add -s user`, Cursor's .cursor/mcp.json.\n"
+        "Some clients use a different top-level key; check your client's docs.\n"
+        "Registering it globally rather than per-project makes ml-party available in\n"
+        "every session. Restart the session afterwards for it to connect.",
+        err=True)
 
 
 @app.command("snapshot-preview")

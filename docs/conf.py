@@ -13,7 +13,12 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinx_copybutton",  # GitHub gives code blocks a copy button; the site should too
 ]
+
+# strip prompt characters so a copied command pastes ready to run
+copybutton_prompt_text = r"\$ |>>> |\.\.\. "
+copybutton_prompt_is_regex = True
 
 myst_enable_extensions = ["colon_fence"]
 myst_heading_anchors = 3

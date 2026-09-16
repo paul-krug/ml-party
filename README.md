@@ -61,48 +61,101 @@ Core ideas:
   per-user tokens, UI login) activates with the first `mlp user add`
   ([deployment guide](https://paul-krug.github.io/ml-party/deploy.html)).
 
-## Quickstart
+# Quickstart
 
 **Requirements:** Linux or macOS (Windows via WSL — the store relies on
 POSIX file locking) and Python ≥ 3.11. The web UI ships prebuilt in the
-wheel; nothing to compile.
+wheel; nothing to compile, no Node required.
+
+## Option 1 — let your agent install it
+
+Open your agent **in the project you want to track** and give it this prompt:
+
+```text
+Look at https://github.com/paul-krug/ml-party — install ml-party and set up the MCP server for this project.
+```
+
+It will find [the install skill](.agents/skills/install-ml-party/SKILL.md)
+in this repo and follow it: install the package, reuse your store if you
+already have one (rather than starting a second, disconnected notebook),
+and register the server with your client.
+
+**Then restart your agent session.** A newly registered MCP server cannot
+load into the session that registered it — the skill tells your agent to say
+this, but restart even if it forgets. On the next start, approve `ml-party`
+when prompted; `/mcp` should then list it.
+
+## Option 2 — install it yourself
+
+You will need to follow three small steps.
+
+**1) Run the install.** One personal store holds all your projects.
 
 ```bash
 pip install mlparty
+mlp init --root ~/.mlparty --no-mcp
+export ML_PARTY_STORE=~/.mlparty      # put this in your shell profile
+```
 
-mlp init --root .mlparty                    # create a store (+ MCP registration)
+**2) Make the MCP server visible to your agent.**
+
+Register the store once, globally, so it is there in every session.
+
+Claude Code users paste:
+
+```bash
+claude mcp add -s user ml-party -- "$(which mlp)" serve-mcp --root ~/.mlparty
+```
+
+For any other agent/harness, print the snippet and paste it into that
+client's own MCP configuration:
+
+```bash
+mlp mcp-config
+```
+
+It prints a standard `mcpServers` entry; its home differs per client
+(Cursor's `.cursor/mcp.json`, and so on — a few use a different top-level
+key, so check your client's docs).
+
+Either way ml-party is then available in every session, in any directory,
+and each codebase you work in becomes a `project` inside that one graph.
+
+Prefer a store that lives inside one repository instead — because the
+notebook should travel with it, or a team shares it? That variant, and when
+it is worth the trade-off, is in the
+[MCP setup guide](https://paul-krug.github.io/ml-party/mcp.html#one-store-or-one-per-project).
+
+**3) Restart the session.** A newly registered MCP server only loads on the
+next start. Approve `ml-party` when prompted; `/mcp` lists what is active,
+and `claude mcp list` shows what was loaded if it is missing.
+
+## See it running
+
+```bash
 python -m mlparty.demo &                    # a real run: contract + live metrics
 mlp ui                                      # → http://127.0.0.1:7327
 ```
 
 Open the browser: the demo run is streaming its loss curve live. It went
 through the full lifecycle a real training does — pre-registered with
-purpose/hypothesis/parameters, source snapshotted, metrics streamed, then
-finalized with a verdict. Click into it: Overview | Metrics | Artifacts |
-Code.
+purpose/hypothesis/parameters, metrics streamed, then finalized with a
+verdict. Click into it: Overview | Metrics | Artifacts | Code.
 
-### Let an agent drive it
+## Then just tell your agent
 
-`mlp init` registered the MCP server in `./.mcp.json`. **Start your agent
-from this directory** — a project-scoped server is read from the directory
-the agent starts in — and approve `ml-party` when prompted; `/mcp` lists
-what is active. The server is **self-teaching**: the full tracking workflow
-rides in its MCP instructions, so *"use ml-party for this run"* is all an
-agent needs to hear.
+The server is **self-teaching**: the full tracking workflow rides in its MCP
+instructions, so *"use ml-party for this run"* is all an agent needs to
+hear.
 
 Before the first run it will **ask which directory holds your code**. That
 directory (`source_root`) is what gets snapshotted into the store, so the
 agent shows you the file list before anything is written, and never captures
-what your `.gitignore` excludes. Say no source directory and the run simply
+what your `.gitignore` excludes. Name no directory and the run simply
 records no code — nothing is ever swept up silently.
 
-Other setups: `mlp connect --project <dir>` registers an existing store for
-another project; `mlp mcp-config` prints the snippet for other MCP clients;
-for one store across every project, register it user-wide:
-
-```bash
-claude mcp add -s user ml-party -- "$(pwd)/.venv/bin/mlp" serve-mcp --root "$(pwd)/.mlparty"
-```
+Other setups: `mlp connect --root <store> --project <dir>` registers an
+existing store for one more project.
 
 ### Instrument a training script
 
@@ -125,7 +178,7 @@ h.finalize(method=..., result={"summary": ..., "verdict": "confirmed",
 CLI mirror: `mlp status / runs / show <ref> / tail <run> / query "…" /
 diff <a> <b> / janitor / rebuild-index`.
 
-## Web viewer
+# Web viewer
 
 `mlp ui` serves a read-only SPA: experiments → runs → tabbed run pages with
 live SSE metric dashboards, a finder-style artifact browser (image/audio/
@@ -135,7 +188,7 @@ lineage graph, search, and diff. Remote box → tunnel like TensorBoard:
 sync ingest, see the [deployment guide](https://paul-krug.github.io/ml-party/deploy.html)
 and the [remote-tracking guide](https://paul-krug.github.io/ml-party/remote.html).
 
-## From source
+# From source
 
 For development, or to run an unreleased revision — needs Node ≥ 20, since
 the UI bundle is built rather than downloaded:
@@ -151,7 +204,7 @@ Contributions: [CONTRIBUTING.md](CONTRIBUTING.md) for the flow and the
 maintainer-only paths, [AGENTS.md](AGENTS.md) for conventions,
 [SECURITY.md](SECURITY.md) for the trust model.
 
-## Design
+# Design
 
 - **[User guide](https://paul-krug.github.io/ml-party/)** (rendered from
   [docs/](docs/)): [tracking runs](https://paul-krug.github.io/ml-party/tracking.html),
@@ -173,7 +226,7 @@ source of truth; SQLite/FTS5 is a rebuildable index) → dulwich internal-git
 engine → `MlParty` core API → thin frontends (MCP server, `mlp` CLI,
 in-process client, read-only HTTP+SSE for the viewer).
 
-## Status
+# Status
 
 Beta (0.x): APIs may still move between minor versions; the store format is
 journal-first and rebuildable, and every release migrates it forward.

@@ -7,6 +7,46 @@ finalize → distill) ships as the server's MCP `instructions` and as a
 manual; this page covers setup and the tool surface, and
 [docs/tracking.md](tracking.md) explains the contract itself.
 
+## One store, or one per project?
+
+Decide this first: it shapes everything else. **A store is a notebook, not a
+per-repo file.** It holds `project → experiment → run`, and retrieval spans
+the whole store — so one store covering all your work lets an agent answer
+*"what did I try for the vocoder last spring?"* from inside any project. A
+store per repository splits that into islands which cannot see each other,
+and makes the `project` node type pointless.
+
+**The default: one personal store, registered globally.**
+
+```bash
+pip install mlparty
+mlp init --root ~/.mlparty --no-mcp
+export ML_PARTY_STORE=~/.mlparty      # so the `mlp` CLI finds it anywhere
+```
+
+`--no-mcp` is deliberate: it skips writing a `.mcp.json` into whatever
+directory you happen to be standing in, because this store is registered
+globally instead (next section). Each codebase you work in then becomes a
+`project` inside that one graph, and the working directory stops mattering.
+
+**A store per project** is right in three cases, and only those: the
+notebook should travel with the repository; a team shares a served store for
+one project; or a project's data must stay physically separate (different
+disk, different backup policy, different machine).
+
+```bash
+cd /path/to/your/project
+mlp init --root .mlparty        # store + ./.mcp.json, both here
+```
+
+The trade-off is that queries only ever see this project, and you repeat the
+setup per repository. If you later want them joined, a spool store can flush
+into a served one ({doc}`remote`) — but two local stores do not merge.
+
+Mixed setups are fine: keep the personal store global, and register a
+project-local store for the one repository that needs it with
+`mlp connect --root <that store> --project <dir>`.
+
 ## Zero-terminal setup
 
 ```bash
@@ -16,11 +56,19 @@ mlp mcp-config --root <store>   # print the JSON snippet for other MCP clients
 mlp serve-mcp --root <store>    # run the server by hand (stdio)
 ```
 
-`mlp init` / `mlp connect` write (or merge into) the project's `.mcp.json`,
-so any MCP-aware agent started in the project picks the server up after a
-one-time approval. From there, "use ml-party to track this run" is all an
-agent needs to hear. Note: `.mcp.json` carries absolute paths — keep it out
-of git.
+`mlp init` / `mlp connect` write (or merge into) the project's `.mcp.json` —
+the project-scoped convention Claude Code and compatible clients read — so
+an agent started in that directory picks the server up after a one-time
+approval. From there, "use ml-party to track this run" is all an agent needs
+to hear. Note: `.mcp.json` carries absolute paths — keep it out of git.
+
+**Any other MCP client** works the same way through its own configuration:
+`mlp mcp-config --root <store>` prints a standard `mcpServers` entry to
+paste (Cursor's `.cursor/mcp.json`, and so on — a few clients use a
+different top-level key, so check yours). Registering the store **globally**
+rather than per-project is usually what you want: one store holds many
+projects, and a global registration means it is there in every session
+regardless of the directory.
 
 **If the server does not show up**, it is almost always one of two things:
 
