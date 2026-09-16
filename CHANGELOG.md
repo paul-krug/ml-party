@@ -7,6 +7,15 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+## [0.2.2] — 2026-09-16
+
+### Fixed
+- **Hardware capture on macOS**: total RAM was read only from
+  `/proc/meminfo`, so every run tracked on a Mac recorded no RAM at all —
+  silently, since the read was already fault-tolerant. Falls back to
+  `sysctl hw.memsize`. macOS is now covered by CI (Python 3.11 and 3.14)
+  instead of assumed.
+
 ### Added
 - Repository-level security policy: SECURITY.md documents the
   agent-instruction supply chain (instruction files are read by AI agents
