@@ -7,6 +7,8 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+## [0.2.7] — 2026-09-16
+
 ### Fixed
 - **Timestamps in the UI were unlabelled UTC.** `fmtDate` sliced the ISO string
   instead of parsing it, so every absolute time rendered UTC digits with no zone
