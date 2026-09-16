@@ -7,6 +7,8 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+## [0.2.8] — 2026-09-16
+
 ### Added
 - **`mlp demo`** — the demo is now a real CLI command, so it appears in
   `mlp --help` and in the command list `help()` reports. It was previously only
