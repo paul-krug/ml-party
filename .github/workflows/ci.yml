@@ -30,6 +30,25 @@ jobs:
       - run: pip install -e .[dev]
       - run: python -m pytest tests/ -q
 
+  # macOS is a supported platform (POSIX file locking, spawn-based
+  # multiprocessing and BSD userland all differ from Linux), so it is
+  # tested rather than assumed. Deliberately a SEPARATE job: adding an
+  # `os` axis to `test` above would rename its jobs and orphan the
+  # required status checks pinned in branch protection.
+  test-macos:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.14"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e .[dev]
+      - run: python -m pytest tests/ -q
+
   ui-build:
     runs-on: ubuntu-latest
     steps:

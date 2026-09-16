@@ -44,6 +44,23 @@ def capture_env_lock(python_exe: str | None = None) -> bytes:
     return (header + freeze).encode()
 
 
+def _total_ram_gb() -> float | None:
+    """Physical RAM, by whatever the platform offers: /proc on Linux,
+    sysctl on macOS. None when neither answers."""
+    try:
+        with open("/proc/meminfo") as f:
+            for line in f:
+                if line.startswith("MemTotal"):
+                    return round(int(line.split()[1]) / 1024 / 1024, 1)
+    except OSError:
+        pass
+    if sys.platform == "darwin":
+        out = _run(["sysctl", "-n", "hw.memsize"], timeout=5)
+        if out and out.strip().isdigit():
+            return round(int(out.strip()) / 1024**3, 1)
+    return None
+
+
 def capture_hardware(captured_by: str | None = None) -> Hardware:
     gpus = []
     smi = _run(
@@ -60,15 +77,7 @@ def capture_hardware(captured_by: str | None = None) -> Hardware:
                 except ValueError:
                     vram = None
                 gpus.append(GpuInfo(name=parts[0], vram_mb=vram, driver=parts[2]))
-    ram_gb = None
-    try:
-        with open("/proc/meminfo") as f:
-            for line in f:
-                if line.startswith("MemTotal"):
-                    ram_gb = round(int(line.split()[1]) / 1024 / 1024, 1)
-                    break
-    except OSError:
-        pass
+    ram_gb = _total_ram_gb()
     return Hardware(
         host=socket.gethostname(), platform=platform.platform(),
         cpu=platform.processor() or platform.machine(), ram_gb=ram_gb, gpus=gpus,
