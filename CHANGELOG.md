@@ -7,6 +7,8 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+## [0.2.4] — 2026-09-16
+
 ### Added
 - An [install skill](.agents/skills/install-ml-party/SKILL.md) an agent can
   follow to set ml-party up in someone's project: reuse an existing store
