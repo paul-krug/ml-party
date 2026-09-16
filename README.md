@@ -121,10 +121,14 @@ sync ingest, see [docs/deploy.md](docs/deploy.md) and
 
 ## Design
 
-- [docs/](docs/) — **user guide** (Sphinx site): [tracking runs](docs/tracking.md),
-  [the web UI](docs/ui.md), [boards](docs/boards.md),
-  [run control](docs/actions.md), [MCP setup & tools](docs/mcp.md),
-  [remote tracking](docs/remote.md), [deployment & auth](docs/deploy.md).
+- **[User guide](https://paul-krug.github.io/ml-party/)** (rendered from
+  [docs/](docs/)): [tracking runs](https://paul-krug.github.io/ml-party/tracking.html),
+  [the web UI](https://paul-krug.github.io/ml-party/ui.html),
+  [boards](https://paul-krug.github.io/ml-party/boards.html),
+  [run control](https://paul-krug.github.io/ml-party/actions.html),
+  [MCP setup & tools](https://paul-krug.github.io/ml-party/mcp.html),
+  [remote tracking](https://paul-krug.github.io/ml-party/remote.html),
+  [deployment & auth](https://paul-krug.github.io/ml-party/deploy.html).
 - [DESIGN.md](DESIGN.md) — **the living design document** (ontology,
   contract, internal-git model, storage, surfaces, remote mode, forward
   design).
