@@ -9,7 +9,7 @@ is a small project, not a staffed security team).
 
 ## Trust model
 
-Full deployment guidance lives in [docs/deploy.md](docs/deploy.md); the
+Full deployment guidance lives in [the deployment guide](src/mlparty/_docs/deploy.md); the
 short version:
 
 - **Local store** (`mlp ui`, MCP over stdio, the in-process client): one

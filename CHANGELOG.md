@@ -7,6 +7,29 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+### Added
+- **`help` MCP tool — the package documents itself to agents.** The guides now
+  ship *inside the wheel*, so an agent that only ran `pip install mlparty` can
+  read them with no checkout and no browser. `help()` returns the topic index
+  plus every `mlp` command (introspected from the CLI, so it cannot drift), the
+  installed version and the store root; `help(topic)` returns a guide in full.
+  Previously an agent's whole knowledge of ml-party was the tool descriptions
+  and the tracking contract — it could not discover the demo, the web UI, how
+  to instrument a training script, boards, actions, sync or deployment without
+  reading the source.
+- A **quickstart** guide written for agents rather than readers: run the demo
+  with the right interpreter, check which store it landed in, watch it live.
+
+### Changed
+- The user guides moved to `src/mlparty/_docs/` so they ship with the package;
+  the docs site renders those same files through `{include}` stubs, so there is
+  one source of truth and page URLs are unchanged.
+
+### Fixed
+- `mlparty.__version__` reported **0.1.0** on every release since 0.2.0 — it was
+  hardcoded. It now comes from package metadata and cannot drift from
+  `pyproject.toml` again.
+
 ## [0.2.5] — 2026-09-16
 
 ### Fixed

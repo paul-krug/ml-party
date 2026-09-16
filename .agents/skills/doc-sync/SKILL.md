@@ -36,7 +36,7 @@ commands/flags**, **HTTP endpoints**, **install or run instructions**,
 | Surface | Where | Check |
 |---|---|---|
 | README | `README.md` | quickstart (does it still work verbatim?), feature bullets, links, requirements |
-| User guide | `docs/*.md` | commands, flags, described behavior, screenshots/paths |
+| User guide | `src/mlparty/_docs/*.md` | commands, flags, described behavior, screenshots/paths. **Edit them here, not in `docs/`** — `docs/*.md` are `{include}` stubs. These ship in the wheel and are what the `help` MCP tool serves agents, so a stale guide misinforms agents as well as readers |
 | Landing page | `docs/index.md` | the install block — it duplicates README's quickstart by design; both move together |
 | Design doc | `DESIGN.md` | ontology, contract, storage model, surfaces, status markers ("shipped"/"planned") |
 | Security | `SECURITY.md` | trust model, new attack surface, known-limitations list |

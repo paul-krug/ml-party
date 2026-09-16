@@ -38,6 +38,7 @@ audited ({doc}`actions`).
 :maxdepth: 2
 :caption: User guide
 
+quickstart
 tracking
 ui
 boards

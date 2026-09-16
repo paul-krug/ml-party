@@ -48,7 +48,9 @@ mlp = "mlparty.cli:app"
 where = ["src"]
 
 [tool.setuptools.package-data]
-mlparty = ["static/*.js", "ui_dist/*", "ui_dist/assets/*"]
+# _docs ships in the wheel so the `help` MCP tool can serve the real guides to
+# agents; the docs site renders these same files through include stubs.
+mlparty = ["static/*.js", "ui_dist/*", "ui_dist/assets/*", "_docs/*.md"]
 
 [tool.ruff]
 line-length = 100
