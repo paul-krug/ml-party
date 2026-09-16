@@ -133,7 +133,7 @@ and `claude mcp list` shows what was loaded if it is missing.
 ## See it running
 
 ```bash
-python -m mlparty.demo &                    # a real run: contract + live metrics
+mlp demo &                                  # a real run: contract + live metrics
 mlp ui                                      # → http://127.0.0.1:7327
 ```
 

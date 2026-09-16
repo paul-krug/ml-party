@@ -115,7 +115,7 @@ runs elsewhere, use `mlp connect --project <that directory>`, or paste the
 | Tool | Purpose |
 | --- | --- |
 | `workflow_guide` | the full operating manual, plus which store you are serving and what is in it — an agent's first call |
-| `help` | the package's own documentation — bare for the index (topics, every `mlp` command, version, store root, where to report a bug), or `help(topic)` for a guide in full |
+| `help` | **the package explaining itself** — bare returns the quickstart in full plus the index (every `mlp` command, topics, version, store root, where to report a bug); `help(topic)` one guide, `help('all')` every guide. The answer always describes the *installed* version |
 | `project_ensure`, `experiment_ensure`, `experiment_list` | get-or-create hierarchy; an experiment answers **one question** |
 | `run_start` | pre-register intent + auto-capture; returns `run_id`, `snapshot_report`, hints |
 | `snapshot_preview` | what a code snapshot of a directory would capture, and the delta vs the last one — before anything is written |

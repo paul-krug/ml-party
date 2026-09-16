@@ -247,6 +247,17 @@ def serve_mcp(root: str | None = RootOpt):
 
 
 @app.command()
+def demo(root: str | None = RootOpt, steps: int = 120, sleep: float = 0.25):
+    """Run the live demo — a real tracked run (pre-registration, streaming metrics,
+    finalize with a verdict) in about 30 seconds. Watch it with `mlp ui`."""
+    from .demo import run_demo
+
+    store = _root(root)
+    typer.echo(f"demo run -> store {Path(store).resolve()}", err=True)
+    typer.echo(run_demo(str(store), steps=steps, sleep=sleep))
+
+
+@app.command()
 def ui(root: str | None = RootOpt, host: str = "127.0.0.1", port: int = 7327):
     """Serve the read-only HTTP API + web viewer (tunnel via ssh -L for remote)."""
     import uvicorn

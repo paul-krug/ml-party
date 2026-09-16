@@ -15,7 +15,7 @@ pip install mlparty
 mlp init --root ~/.mlparty --no-mcp         # one store holds all your projects
 export ML_PARTY_STORE=~/.mlparty            # put this in your shell profile
 
-python -m mlparty.demo &                    # a real run: contract + live metrics
+mlp demo &                                  # a real run: contract + live metrics
 mlp ui                                      # → http://127.0.0.1:7327
 ```
 
