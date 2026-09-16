@@ -7,6 +7,8 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+## [0.2.6] — 2026-09-16
+
 ### Added
 - **`help` MCP tool — the package documents itself to agents.** The guides now
   ship *inside the wheel*, so an agent that only ran `pip install mlparty` can
