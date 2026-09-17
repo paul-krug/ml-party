@@ -45,7 +45,11 @@ Grant writer access accordingly. Every write carries an authenticated
 instructs agents to treat retrieved content strictly as data. Boards
 (agent-authored HTML) render in a sandboxed opaque origin with a strict
 CSP — no external hosts, read-only API access, no cookies — and inline
-artifact serving is safelisted to non-executing media types.
+artifact serving is safelisted to non-executing media types. The same rule
+applies to the one stored field the UI turns into a clickable link, a run's
+`compute.url`: it is writer-supplied, so its scheme is allowlisted on write
+(never `javascript:` or `data:`) and only `http(s)` is rendered as a link —
+anything else shows as text.
 
 ## Threat model: the agent-instruction supply chain
 

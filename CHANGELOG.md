@@ -7,6 +7,33 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+### Added
+- **Runs can record where they actually execute.** Submitting to a cluster,
+  a queue or a cloud box from a laptop used to leave the run pointing at the
+  laptop: `hardware` held the launcher's specs, and nothing anywhere said
+  which job this was or how to find it. A run now carries `compute`
+  (`system`, `job_id`, `url`, `host`, `note`) — set it with the new
+  `run_set_compute` MCP tool / `MlParty.run_set_compute()` right after the
+  submit command answers with an id, pass `compute={...}` to `run_start`
+  when it is already known, or hand it to the job over the env handshake
+  (`ML_PARTY_COMPUTE_SYSTEM` / `_JOB_ID` / `_URL` next to `ML_PARTY_RUN`) and
+  `attach()` records it from the compute host. The web UI shows it as a chip
+  on the run, linking straight to the job, and the job's system/id/host are
+  indexed for search, so "which run was jobpool 4711?" is answerable from the
+  other end too. Deliberately no scheduler integration: ml-party neither
+  submits nor polls, so this works with any job system, in-house ones
+  included.
+
+### Changed
+- **`run_start` skips hardware capture when the call declares remote
+  `compute`.** The machine that submits a job is not the machine that runs it,
+  so capturing its specs there is a wrong answer rather than an approximate
+  one; hardware then arrives from `mlparty.attach()` on the compute host, and
+  until it does the run carries none. Declaring remote compute *afterwards*
+  with `run_set_compute` leaves an existing capture alone — it stays labelled
+  `captured_by: "start"` (shown as *launcher's view* in the UI) rather than
+  being deleted, so nothing already recorded is lost.
+
 ## [0.2.8] — 2026-09-16
 
 ### Added

@@ -121,6 +121,22 @@ class Hardware(BaseModel):
     captured_by: str | None = None  # 'start' (launcher's view) | 'attach' (compute host)
 
 
+class ComputeRef(BaseModel):
+    """Where a run executes, when that is not the machine that started it.
+
+    Deliberately scheduler-agnostic — a label, the job system's own handle,
+    and a link that finds the job again. ml-party integrates with no job
+    system and never polls one: this is a pointer the user (or an agent)
+    follows, so `url` is the field that earns its keep.
+    """
+    system: str | None = None       # "jobpool", "slurm", "modal" — free text
+    job_id: str | None = None       # the job system's own handle
+    url: str | None = None          # where a human finds it again
+    host: str | None = None         # the compute box, when known ahead of time
+    note: str | None = None
+    captured_by: str | None = None  # 'start' | 'agent' (registered later) | 'attach'
+
+
 class ArtifactRef(BaseModel):
     sha256: str
     size_bytes: int
@@ -191,6 +207,11 @@ class RunNode(NodeBase):
     data_refs: list[DataRef] = Field(default_factory=list)
     seed: int | None = None
     hardware: Hardware | None = None
+    # where it runs, when that is not the machine that started it (§9); None
+    # means "here". Declared at start (which also skips hardware capture), or
+    # registered once the job system answers with a handle (which leaves any
+    # capture alone) — either way attach() then reports the compute host's.
+    compute: ComputeRef | None = None
     started_at: datetime = Field(default_factory=utcnow)
     ended_at: datetime | None = None
     metrics_summary: dict[str, float] = Field(default_factory=dict)

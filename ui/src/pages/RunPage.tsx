@@ -3,7 +3,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { CodeTree, NodeDetailData, api, fmtDate, fmtDuration } from "../api";
 import ArtifactsTab from "../components/artifacts/ArtifactsTab";
 import Dashboard from "../components/dashboard/Dashboard";
-import { StatusChip, Tags, VerdictChip } from "../components/chips";
+import { ComputeChip, StatusChip, Tags, VerdictChip } from "../components/chips";
 import { AnnotateForm, Copy, Crumbs, EdgeRow, KV, nodeTitle } from "../components/shared";
 
 const TABS = ["overview", "metrics", "artifacts", "code"] as const;
@@ -98,6 +98,26 @@ function Overview({ data, reload }: { data: NodeDetailData; reload: () => void }
               </dd>
             </>
           )}
+          {n.compute && (
+            <>
+              <dt>compute</dt>
+              <dd>
+                {[n.compute.system, n.compute.job_id && `job ${n.compute.job_id}`,
+                  n.compute.host].filter(Boolean).join(" · ") || "runs elsewhere"}
+                {n.compute.url && (
+                  <>
+                    {" · "}
+                    {/^https?:\/\//i.test(n.compute.url)
+                      ? <a href={n.compute.url} target="_blank" rel="noopener noreferrer">
+                          {n.compute.url}
+                        </a>
+                      : <code>{n.compute.url}</code>}
+                  </>
+                )}
+                {n.compute.note && <div className="muted small">{n.compute.note}</div>}
+              </dd>
+            </>
+          )}
           {n.hardware?.host && (
             <>
               <dt>hardware</dt>
@@ -106,6 +126,17 @@ function Overview({ data, reload }: { data: NodeDetailData; reload: () => void }
                 {n.hardware.gpus?.map((g: any) => `${g.name} ${g.vram_mb}MB`).join(", ") ||
                   "no GPU recorded"}
                 {n.hardware.ram_gb ? ` · ${n.hardware.ram_gb} GB RAM` : ""}
+                {n.hardware.captured_by === "start" && (
+                  <span className="muted small"> (launcher's view)</span>
+                )}
+              </dd>
+            </>
+          )}
+          {!n.hardware?.host && n.compute && (
+            <>
+              <dt>hardware</dt>
+              <dd className="muted">
+                not recorded — arrives when the job attaches on the compute host
               </dd>
             </>
           )}
@@ -249,7 +280,7 @@ export default function RunPage() {
       />
       <h1>
         {n.title} <StatusChip status={n.status} alive={n.alive} heartbeatAt={n.heartbeat_at} />{" "}
-        <VerdictChip verdict={n.result?.verdict} />
+        <VerdictChip verdict={n.result?.verdict} /> <ComputeChip compute={n.compute} />
       </h1>
       <div className="metaline">
         <span className="idmono">{n.id}</span>

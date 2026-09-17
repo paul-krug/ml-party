@@ -9,6 +9,7 @@ so an agent repairs in one round-trip.
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import urlsplit
 
 from .models import Result, RunNode
 
@@ -18,6 +19,13 @@ MIN_TEXT = 20         # method / result.summary
 MIN_REPRODUCE = 5
 MIN_WHAT_FAILED = 10
 EXPLORATORY_PREFIX = "exploratory:"
+
+COMPUTE_FIELDS = ("system", "job_id", "url", "host", "note")
+# A compute url is rendered as a link in the web UI and handed to humans, so
+# the scheme is an allowlist: script-bearing schemes (javascript:, data:) never
+# enter the store. Anything a person can actually follow is welcome.
+COMPUTE_URL_SCHEMES = ("http", "https", "ssh", "sftp", "ftp", "ftps",
+                       "s3", "gs", "abfss", "file")
 
 
 class ContractViolation(Exception):
@@ -98,6 +106,49 @@ def validate_finalize(run: RunNode, method: str | None, result: Result | None,
 
     if missing or invalid:
         raise ContractViolation(missing, invalid)
+
+
+def validate_compute(compute: Any) -> dict[str, str]:
+    """A compute reference has to point somewhere: at least one of system /
+    job_id / url, and a url a human can actually follow. Returns the cleaned
+    mapping (blanks dropped, whitespace stripped)."""
+    missing: list[str] = []
+    invalid: list[dict[str, str]] = []
+
+    if not isinstance(compute, dict):
+        raise ContractViolation(invalid=[{
+            "field": "compute",
+            "reason": f"must be a mapping with keys {', '.join(COMPUTE_FIELDS)}"}])
+
+    unknown = sorted(set(compute) - set(COMPUTE_FIELDS) - {"captured_by"})
+    if unknown:
+        invalid.append({"field": "compute",
+                        "reason": f"unknown key(s) {', '.join(unknown)} — "
+                                  f"keys are {', '.join(COMPUTE_FIELDS)}; put anything "
+                                  "else in note"})
+
+    clean = {k: str(v).strip() for k in COMPUTE_FIELDS
+             if (v := compute.get(k)) is not None and str(v).strip()}
+
+    if not any(clean.get(k) for k in ("system", "job_id", "url")):
+        missing.append("compute.system / compute.job_id / compute.url "
+                       "(at least one — a reference has to identify the job)")
+
+    url = clean.get("url")
+    if url:
+        scheme = urlsplit(url).scheme.lower()
+        if not scheme:
+            invalid.append({"field": "compute.url",
+                            "reason": "needs a scheme, e.g. https://…"})
+        elif scheme not in COMPUTE_URL_SCHEMES:
+            invalid.append({"field": "compute.url",
+                            "reason": f"scheme {scheme!r} is not one a link can "
+                                      f"safely carry — use one of "
+                                      f"{', '.join(COMPUTE_URL_SCHEMES)}"})
+
+    if missing or invalid:
+        raise ContractViolation(missing, invalid)
+    return clean
 
 
 def validate_fail(run: RunNode, what_failed: str | None) -> None:

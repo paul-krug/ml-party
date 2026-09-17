@@ -48,6 +48,9 @@ if _mlp: _mlp.log_metric("loss", float(loss), step=step)
   `reproduce` (the exact re-run invocation).
 - **Refusals are data, not errors**: an incomplete finalize returns
   `{missing: [...], invalid: [...]}` — fix the listed fields and call again.
+- **`run_set_compute` records where a run executes** when that is not this
+  machine (below) — not part of the contract, but the difference between a
+  remote job you can find again and one you cannot.
 - **`run_fail` is for declared failures** (`what_failed`, optional
   `failure_class`, `why`, `traceback`). A failure is knowledge; don't
   abandon what you can explain.
@@ -58,7 +61,9 @@ if _mlp: _mlp.log_metric("loss", float(loss), step=step)
 
 At `run_start` (the launcher's view): the outer git state, an env lock for
 `python_exe`, hardware (`captured_by: "start"`) — and, **only if you pass
-`source_root`**, a snapshot of the code.
+`source_root`**, a snapshot of the code. Hardware capture is skipped entirely
+when you declare remote compute *in the same call* (below): this machine's
+specs are not that run's specs.
 
 Code capture is deliberately explicit, because a snapshot copies file
 contents into the store and, on a served store, on to everyone who can read
@@ -90,6 +95,53 @@ from `sys.executable`, stored content-addressed as `env_lock_runtime` on the
 run. The env-lock capture runs in a background thread (pip freeze is slow);
 `finalize()`/`fail()` wait for it, so completed runs always carry it.
 Unhandled exceptions auto-fail the run with the traceback.
+
+## Runs that execute somewhere else
+
+If you submit the job to a cluster, a queue, or a cloud box instead of
+starting it here, record **where it went** so the run stays a way back to
+the job:
+
+```python
+party.run_set_compute(run_id, system="jobpool", job_id="4711",
+                      url="https://jobs.internal/j/4711")
+```
+
+Same call over MCP (`run_set_compute`), or as `compute={...}` on
+`run_start` when you already know. `system` / `job_id` / `url` / `host` /
+`note` — at least one of the first three, and a `url` needs a scheme
+(`https://…`, `ssh://…`) because it becomes a link in the web UI. Fields
+given replace, fields omitted keep, so call it again as more becomes known:
+usually the job id only exists *after* the submit command returns, which is
+why this is a separate call from `run_start`.
+
+The launcher can do it instead of you, over the same env handshake that
+carries the run id — set these on the **job's** environment and `attach()`
+records them from the compute host itself:
+
+```
+ML_PARTY_COMPUTE_SYSTEM=jobpool   ML_PARTY_COMPUTE_JOB_ID=4711
+ML_PARTY_COMPUTE_URL=https://jobs.internal/j/4711
+```
+
+Two things this deliberately is **not**: ml-party neither submits the job
+nor polls it, so `status` still comes from `run_finalize` / `run_fail` (or
+the janitor), and the reference works for any job system, including one it
+has never heard of. And it is unrelated to
+[remote *tracking*](remote.md) — that ships a run's data to a store on
+another machine, this records where the run's *compute* is. A remote run
+usually wants both: the job needs `ML_PARTY_STORE` to reach a store, and
+the store needs a way back to the job.
+
+**Hardware depends on when you declare it.** Pass `compute` to `run_start`
+and nothing is captured — the run carries no hardware until `attach()` records
+the compute host's. Call `run_set_compute` *afterwards* and whatever
+`run_start` already captured stays: it is this machine, labelled
+`captured_by: "start"`, and the UI shows it as *(launcher's view)* until
+`attach()` replaces it. Nothing is deleted after the fact, so a run that never
+attaches keeps an honestly-labelled launcher reading rather than losing the
+record. Either way, hardware tagged `"start"` on a remote run is the machine
+that *submitted* the job, not the one that ran it.
 
 ## Heartbeats
 

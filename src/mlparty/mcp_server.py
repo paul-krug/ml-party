@@ -87,6 +87,22 @@ THE WORKFLOW for any ML run the user asks you to track:
    attach() also auto-fails the run with the traceback on an unhandled crash.
    (`pip install -e <ml-party repo>` into the training env if mlparty is
    missing there.)
+3a. IF THE JOB RUNS SOMEWHERE ELSE (submitted to a cluster/queue/cloud box
+   instead of started here), record where it went so the user can find it
+   again: run_set_compute(run, system="<what runs it>", job_id="<its handle>",
+   url="<the page a human opens>") right after submitting — the submit command
+   is what answers with the id, which is why this is a separate call from
+   run_start. The two handshake variables still have to reach the JOB's
+   environment (through the submit command's env/--env flag), or the run gets
+   no metrics; export ML_PARTY_COMPUTE_SYSTEM / ML_PARTY_COMPUTE_JOB_ID /
+   ML_PARTY_COMPUTE_URL there too and attach() records the reference from the
+   compute host itself. HARDWARE depends on WHEN you declared it: declared at
+   run_start, nothing is captured and the run carries no hardware until it
+   attaches; declared afterwards with run_set_compute, whatever run_start
+   already captured stays — and that is THIS machine, not the box the job runs
+   on. Either way attach() replaces it with the compute host's. So never report
+   hardware carrying captured_by="start" as the run's compute; it is the
+   launcher's view, and for a remote run it is the wrong machine.
 4. While it runs you may also log from your side: run_log_metric,
    run_log_artifact (checkpoints, plots, audio go to the artifact store).
 5. AFTER completion, finalize through the contract — run_finalize(method=how
@@ -326,7 +342,8 @@ def build_server(root: Path | str) -> MCPServer:
                   data_refs: list[dict] | None = None, seed: int | None = None,
                   tags: list[str] | None = None, source_root: str | None = None,
                   python_exe: str | None = None, planned_command: str | None = None,
-                  created_by: str = "agent", confirm_snapshot: bool = False) -> dict:
+                  created_by: str = "agent", confirm_snapshot: bool = False,
+                  compute: dict | None = None) -> dict:
         """Start a run: pre-registration (purpose = why this run exists; hypothesis =
         expected outcome and why, or 'exploratory: <question>'; parameters = the FULL
         config) plus automatic repro-tuple capture: env lock (point python_exe at the
@@ -340,20 +357,53 @@ def build_server(root: Path | str) -> MCPServer:
         the refusal carries a preview to show the user first.
 
         derives_from (run ids) declares lineage — it becomes both a graph edge and the
-        snapshot commit's parent. Returns run_id, the commit, a snapshot report (check
-        BOTH directions: was anything important excluded, and did anything land in it
-        that should not be in the store?), and hints. Launch the training with env
-        ML_PARTY_STORE=<the store_root this returns> and ML_PARTY_RUN=<run_id>, so
+        snapshot commit's parent. compute={system, job_id?, url?, host?, note?} declares
+        that the job runs ELSEWHERE (see run_set_compute) — pass it when you already
+        know, and THIS machine's hardware is not captured at all (declaring it later
+        instead leaves the capture in place, labelled as the launcher's view). Returns run_id, the commit, a snapshot
+        report (check BOTH directions: was anything important excluded, and did anything
+        land in it that should not be in the store?), and hints. Launch the training with
+        env ML_PARTY_STORE=<the store_root this returns> and ML_PARTY_RUN=<run_id>, so
         the script can attach via mlparty.attach()."""
         out = guarded(party.run_start, experiment=experiment, title=title,
                       purpose=purpose, hypothesis=hypothesis, parameters=parameters,
                       derives_from=derives_from, data_refs=data_refs, seed=seed,
                       tags=tags, source_root=source_root, python_exe=python_exe,
                       planned_command=planned_command, created_by=created_by,
-                      confirm_snapshot=confirm_snapshot)
+                      confirm_snapshot=confirm_snapshot, compute=compute)
         if out.get("ok"):
             out["data"]["store_root"] = str(party.store.root.resolve())
         return out
+
+    @mcp.tool()
+    def run_set_compute(run: str, system: str | None = None, job_id: str | None = None,
+                        url: str | None = None, host: str | None = None,
+                        note: str | None = None) -> dict:
+        """Record WHERE a run executes when that is not this machine — a job submitted
+        to a cluster, a queue, a cloud box. Call it right after submitting, with
+        whatever the job system answered.
+
+        system: what runs it ("jobpool", "slurm", "modal" — free text). job_id: that
+        system's own handle. url: the link a HUMAN opens to find the job again (needs
+        a scheme: https://…, ssh://…) — this is the field that earns its keep, so
+        include it whenever the job system has a page for the job. host: the compute
+        box, if known. note: anything else (queue, GPU allocation).
+
+        At least one of system / job_id / url is required. Fields given replace,
+        fields omitted keep — so call it again as more becomes known (submitted →
+        queued → the dashboard URL appears). ml-party never polls the job system:
+        this is a pointer, and the run's status still comes from run_finalize /
+        run_fail. This call does NOT touch hardware: whatever run_start captured
+        stays, labelled captured_by="start" — the launcher's machine, not the
+        one the job runs on — until mlparty.attach() replaces it with the compute
+        host's. (Pass compute to run_start instead and nothing is captured at
+        all.) Do not report start-captured hardware as a remote run's compute.
+
+        The launcher can set it instead of you: export ML_PARTY_COMPUTE_SYSTEM /
+        ML_PARTY_COMPUTE_JOB_ID / ML_PARTY_COMPUTE_URL next to ML_PARTY_RUN and
+        attach() records them from the compute host itself."""
+        return guarded(party.run_set_compute, run=run, system=system, job_id=job_id,
+                       url=url, host=host, note=note)
 
     @mcp.tool()
     def snapshot_preview(source_root: str, experiment: str | None = None) -> dict:

@@ -21,6 +21,7 @@ EXPECTED_TOOLS = {
     "run_finalize", "run_fail",
     "note_create", "node_get", "node_annotate", "graph_query", "run_diff",
     "action_list", "action_invoke", "action_register", "snapshot_preview",
+    "run_set_compute",
 }
 
 
@@ -167,7 +168,10 @@ def test_client_attach_toy_training(proj):
         )
     """))
     env = os.environ | {"ML_PARTY_STORE": str(src / ".mlparty"),
-                        "ML_PARTY_RUN": out["run_id"]}
+                        "ML_PARTY_RUN": out["run_id"],
+                        "ML_PARTY_COMPUTE_SYSTEM": "jobpool",
+                        "ML_PARTY_COMPUTE_JOB_ID": "4711",
+                        "ML_PARTY_COMPUTE_URL": "https://jobs.internal/j/4711"}
     r = subprocess.run([sys.executable, str(script)], env=env,
                        capture_output=True, text=True, check=False)
     assert r.returncode == 0, r.stderr
@@ -181,6 +185,9 @@ def test_client_attach_toy_training(proj):
 
     # split repro capture: the training process is the honest witness
     assert run.hardware.captured_by == "attach"
+    # ...including about where it runs, when the launcher passed the handshake
+    assert run.compute.system == "jobpool" and run.compute.job_id == "4711"
+    assert run.compute.captured_by == "attach"
     assert run.env_lock_runtime is not None  # finalize joins the capture thread
     lock = party.store.artifact_path(run.env_lock_runtime.sha256).read_bytes()
     assert lock.startswith(b"# Python")

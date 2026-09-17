@@ -33,6 +33,6 @@ layer over; the models are the ontology.
 .. automodule:: mlparty.models
    :members: Edge, Abstract, Result, Failure, RunNode, ExperimentNode,
              ProjectNode, NoteNode, ArtifactRef, DataRef, Hardware,
-             Invocation, SnapshotReport
+             ComputeRef, Invocation, SnapshotReport
    :undoc-members:
 ```

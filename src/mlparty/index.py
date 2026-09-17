@@ -95,6 +95,10 @@ def fts_text(node: NodeBase) -> str:
             parts += [node.failure.what_failed, node.failure.why or "",
                       node.failure.failure_class or ""]
         parts += [node.reproduce or "", node.status]
+        if node.compute:
+            # so "which run was jobpool 4711?" is answerable from the other end
+            parts += [node.compute.system or "", node.compute.job_id or "",
+                      node.compute.host or "", node.compute.note or ""]
     elif isinstance(node, NoteNode):
         parts += [node.kind, node.body]
     elif isinstance(node, (ProjectNode, ExperimentNode)):

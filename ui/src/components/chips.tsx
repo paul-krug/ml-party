@@ -1,3 +1,5 @@
+import { ComputeRef } from "../api";
+
 const STATUS_COLOR: Record<string, string> = {
   open: "var(--series-1)",
   finalized: "var(--status-good)",
@@ -57,5 +59,27 @@ export function Tags({ tags }: { tags?: string[] }) {
         <span key={t} className="tag">{t}</span>
       ))}
     </span>
+  );
+}
+
+/** Where a run runs, when that is not this machine. The url is author-supplied
+    data (an agent wrote it), so only http(s) becomes a link — anything else is
+    shown as text rather than handed to the browser as a navigable scheme. */
+export function ComputeChip({ compute }: { compute?: ComputeRef | null }) {
+  if (!compute) return null;
+  const label = [compute.system, compute.job_id && `job ${compute.job_id}`, compute.host]
+    .filter(Boolean).join(" · ") || "remote";
+  const href = /^https?:\/\//i.test(compute.url ?? "") ? compute.url : null;
+  const body = (
+    <>
+      <span className="dot" style={{ background: "var(--series-2)" }} />
+      {label}
+    </>
+  );
+  return href ? (
+    <a className="chip" href={href} target="_blank" rel="noopener noreferrer"
+       title={`open the job: ${href}`}>{body} ↗</a>
+  ) : (
+    <span className="chip" title={compute.url || compute.note || "runs elsewhere"}>{body}</span>
   );
 }
