@@ -20,7 +20,7 @@ import traceback as tb_mod
 from pathlib import Path
 from typing import Any
 
-from .capture import capture_env_lock, capture_hardware, capture_invocation
+from .capture import capture_compute, capture_env_lock, capture_hardware, capture_invocation
 from .core import MlParty
 
 ENV_STORE = "ML_PARTY_STORE"
@@ -41,6 +41,7 @@ class RunHandle:
             "invocation": capture_invocation("client").model_dump(mode="json"),
             "hardware": capture_hardware(captured_by="attach").model_dump(mode="json"),
         })
+        self._record_compute()
         self._env_thread: threading.Thread | None = None
         if capture_env:
             self._env_thread = threading.Thread(
@@ -67,6 +68,18 @@ class RunHandle:
                 name="mlparty-sync", daemon=True).start()
         if install_excepthook:
             self._install_excepthook()
+
+    def _record_compute(self) -> None:
+        """Fill in the job reference from the launcher's handshake. Best-effort
+        like every other capture: a malformed ML_PARTY_COMPUTE_URL must not
+        take the training down with it."""
+        fields = capture_compute()
+        if not fields:
+            return
+        try:
+            self.party.run_set_compute(self.run_id, captured_by="attach", **fields)
+        except Exception:  # noqa: S110, BLE001 — capture is best-effort, never kills training
+            pass
 
     def log_metric(self, name: str, value: float, step: int | None = None) -> None:
         self.party.run_log_metric(self.run_id, name, value, step)

@@ -184,3 +184,73 @@ def test_resolve_by_title_and_missing(mlp):
     assert mlp._resolve("named-run", "run").title == "named-run"
     with pytest.raises(NodeNotFound):
         mlp._resolve("ghost", "run")
+
+
+# --- remote compute: a run that executes somewhere else stays findable -------
+
+def test_run_start_declares_remote_compute_and_skips_local_hardware(mlp):
+    out = _start(mlp, compute={"system": "jobpool", "job_id": "4711",
+                               "url": "https://jobs.internal/j/4711"})
+    run = mlp.store.get_node(out["run_id"])
+    assert run.compute.system == "jobpool"
+    assert run.compute.url == "https://jobs.internal/j/4711"
+    assert run.compute.captured_by == "start"
+    # the laptop's silicon is not this run's silicon
+    assert run.hardware is None
+    assert any("attach" in h for h in out["hints"])
+    # and the pointer rides along in listings, not just on the detail page
+    assert out["run"]["compute"]["job_id"] == "4711"
+
+
+def test_run_start_without_compute_still_captures_local_hardware(mlp):
+    run = mlp.store.get_node(_start(mlp)["run_id"])
+    assert run.compute is None
+    assert run.hardware is not None and run.hardware.captured_by == "start"
+
+
+def test_run_set_compute_merges_as_the_job_becomes_known(mlp):
+    run_id = _start(mlp)["run_id"]
+    mlp.run_set_compute(run_id, system="slurm", job_id="8891")
+    # the dashboard link only exists once the job is scheduled
+    card = mlp.run_set_compute(run_id, url="https://slurm.internal/job/8891",
+                               note="partition=gpu-a100")
+    assert card["compute"] == {"system": "slurm", "job_id": "8891",
+                               "url": "https://slurm.internal/job/8891",
+                               "note": "partition=gpu-a100", "captured_by": "agent"}
+    assert mlp.store.get_node(run_id).compute.system == "slurm"
+
+
+def test_run_set_compute_refuses_an_empty_or_unfollowable_reference(mlp):
+    run_id = _start(mlp)["run_id"]
+    with pytest.raises(ContractViolation) as e:
+        mlp.run_set_compute(run_id, note="somewhere on the cluster")
+    assert e.value.missing
+
+    with pytest.raises(ContractViolation) as e:
+        mlp.run_set_compute(run_id, url="javascript:alert(1)")
+    assert e.value.invalid[0]["field"] == "compute.url"
+
+    with pytest.raises(ContractViolation) as e:
+        mlp.run_set_compute(run_id, url="jobs.internal/j/1")
+    assert "scheme" in e.value.invalid[0]["reason"]
+
+    with pytest.raises(ContractViolation):
+        mlp.run_start(**{
+            "experiment": "exp-a", "title": "bad compute",
+            "purpose": "check that a bad compute ref is refused at start",
+            "hypothesis": "exploratory: does the refusal fire?",
+            "parameters": {}, "compute": {"queue": "gpu"},
+        } | FAST_CAPTURE)
+
+
+def test_run_set_compute_accepts_non_http_references(mlp):
+    run_id = _start(mlp)["run_id"]
+    card = mlp.run_set_compute(run_id, system="box", url="ssh://gpu-box-3/runs/12")
+    assert card["compute"]["url"] == "ssh://gpu-box-3/runs/12"
+
+
+def test_a_remote_run_is_findable_by_its_job_handle(mlp):
+    run_id = _start(mlp, title="cluster sweep")["run_id"]
+    mlp.run_set_compute(run_id, system="jobpool", job_id="4711")
+    hits = mlp.graph_query("jobpool 4711", mode="lexical", limit=5)["results"]
+    assert any(h["id"] == run_id for h in hits)

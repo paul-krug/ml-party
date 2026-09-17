@@ -8,6 +8,13 @@ delta to the server. Offline runs, crashes, and lost connections lose
 nothing; the spool keeps everything until it's shipped, and every shipment
 is idempotent, so retrying is always safe.
 
+**This page is about where a run's *data* lives, not where its *compute*
+is.** To record that a run executes on a cluster or a queue — the job
+system, its id, and a link back to the job — see
+[run_set_compute](tracking.md#runs-that-execute-somewhere-else). The two are
+independent and a remote job usually wants both: it flushes its data here,
+and the run points back at it there.
+
 ## Server (machine S)
 
 ```bash

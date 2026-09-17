@@ -1,3 +1,12 @@
+export interface ComputeRef {
+  system?: string | null;
+  job_id?: string | null;
+  url?: string | null;
+  host?: string | null;
+  note?: string | null;
+  captured_by?: string | null;
+}
+
 export interface Card {
   id: string;
   type: string;
@@ -16,6 +25,7 @@ export interface Card {
   ended_at?: string | null;
   heartbeat_at?: string | null;
   alive?: boolean;
+  compute?: ComputeRef | null;
 }
 
 export interface ExperimentSummary extends Card {

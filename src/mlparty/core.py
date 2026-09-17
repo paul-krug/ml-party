@@ -13,7 +13,13 @@ from dulwich.objects import Blob
 from pydantic import ValidationError
 
 from . import capture
-from .contract import ContractViolation, validate_fail, validate_finalize, validate_start
+from .contract import (
+    ContractViolation,
+    validate_compute,
+    validate_fail,
+    validate_finalize,
+    validate_start,
+)
 from .gitstore import (
     GitStore,
     SnapshotNeedsConfirmation,
@@ -25,6 +31,7 @@ from .models import (
     Abstract,
     Annotation,
     CommitRef,
+    ComputeRef,
     DataRef,
     Edge,
     ExperimentNode,
@@ -65,6 +72,8 @@ def card(node: NodeBase) -> dict[str, Any]:
             "started_at": node.started_at.isoformat(),
             "ended_at": node.ended_at.isoformat() if node.ended_at else None,
         }
+        if node.compute:
+            c["compute"] = node.compute.model_dump(mode="json", exclude_none=True)
     elif isinstance(node, NoteNode):
         c |= {"kind": node.kind, "one_liner": _first_sentence(node.body)}
     elif isinstance(node, ExperimentNode):
@@ -234,8 +243,11 @@ class MlParty:
         python_exe: str | None = None,
         planned_command: str | None = None,
         confirm_snapshot: bool = False,
+        compute: dict[str, Any] | None = None,
     ) -> dict:
         validate_start(title, purpose, hypothesis, parameters)
+        compute_ref = (ComputeRef(**validate_compute(compute), captured_by="start")
+                       if compute else None)
         exp = self._resolve(experiment, "experiment")
         # No source_root means NO source is captured. It used to mean "walk the
         # directory holding the store", which swept whatever happened to live
@@ -272,6 +284,10 @@ class MlParty:
             hints.append(
                 "no source_root given — this run has NO code snapshot; pass "
                 "source_root=<the directory holding the training code> to capture one")
+        if compute_ref is not None:
+            hints.append(
+                "remote compute declared — no hardware recorded for this run yet; "
+                "it arrives when the job calls mlparty.attach() on the compute host")
         same_tree = self.store.index.runs_by_tree(exp.id, tree_sha)
         if same_tree:
             names = ", ".join(f"{d['title']} ({d['id']})" for d in same_tree[:5])
@@ -310,7 +326,12 @@ class MlParty:
             project_git=capture.capture_project_git(root) if root else None,
             invocation=invocation,
             env_lock_ref=capture.ENV_LOCK_PATH,
-            hardware=capture.capture_hardware(captured_by="start"),
+            # the launcher's view is a decent proxy for the compute only when
+            # they are the same machine; once the job runs elsewhere it is just
+            # a wrong answer, so leave it for attach() on the compute host
+            hardware=(None if compute_ref is not None
+                      else capture.capture_hardware(captured_by="start")),
+            compute=compute_ref,
         )
         self.store.create_node(run)
         for parent in parent_runs:
@@ -323,6 +344,28 @@ class MlParty:
             "snapshot_report": report.model_dump(),
             "hints": hints,
         }
+
+    def run_set_compute(self, run: str, system: str | None = None,
+                        job_id: str | None = None, url: str | None = None,
+                        host: str | None = None, note: str | None = None,
+                        captured_by: str = "agent") -> dict:
+        """Record where a run executes — the job system, its handle, and the
+        link back to it. Separate from run_start because a job system usually
+        only answers with a job id *after* the job is submitted, and run_start
+        must happen before. Fields given replace, fields omitted keep, so the
+        reference can be filled in as it becomes known."""
+        node = self._resolve(run, "run")
+        given = {"system": system, "job_id": job_id, "url": url,
+                 "host": host, "note": note}
+        given = {k: v for k, v in given.items() if v is not None}
+        prior = node.compute.model_dump(exclude_none=True) if node.compute else {}
+        prior.pop("captured_by", None)
+        merged = validate_compute(prior | given)
+        updated = self.store.update_node(node.id, {
+            "compute": ComputeRef(**merged, captured_by=captured_by)
+            .model_dump(mode="json"),
+        })
+        return card(updated)
 
     def run_log_metric(self, run: str, name: str, value: float,
                        step: int | None = None) -> dict:

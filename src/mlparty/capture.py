@@ -25,6 +25,15 @@ ENV_ALLOWLIST = (
 
 ENV_LOCK_PATH = ".mlparty/env.lock"
 
+# The launcher's answer to "where is this job?", handed to the training process
+# over the same env handshake as the run id — so any job system (jobpool,
+# slurm, k8s, a submit script) can name itself without ml-party knowing it.
+COMPUTE_ENV = {
+    "system": "ML_PARTY_COMPUTE_SYSTEM",
+    "job_id": "ML_PARTY_COMPUTE_JOB_ID",
+    "url": "ML_PARTY_COMPUTE_URL",
+}
+
 
 def _run(cmd: list[str], timeout: int = 30) -> str | None:
     try:
@@ -83,6 +92,13 @@ def capture_hardware(captured_by: str | None = None) -> Hardware:
         cpu=platform.processor() or platform.machine(), ram_gb=ram_gb, gpus=gpus,
         captured_by=captured_by,
     )
+
+
+def capture_compute() -> dict[str, str]:
+    """Whatever the launcher declared about the job. Empty when it said
+    nothing — an unset handshake means "this machine"."""
+    return {field: value.strip() for field, var in COMPUTE_ENV.items()
+            if (value := os.environ.get(var, "")).strip()}
 
 
 def capture_project_git(source_root: Path | str) -> ProjectGitRef | None:

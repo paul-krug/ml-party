@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { BoardInfo, Card, api, fmtDate, fmtDuration } from "../api";
 import BoardGallery from "../components/BoardGallery";
 import ArtifactsTab from "../components/artifacts/ArtifactsTab";
-import { StatusChip, Tags, VerdictChip } from "../components/chips";
+import { ComputeChip, StatusChip, Tags, VerdictChip } from "../components/chips";
 import { Copy, Crumbs } from "../components/shared";
 
 const STATUSES = ["", "open", "finalized", "failed", "abandoned"];
@@ -120,6 +120,13 @@ export default function ExperimentPage() {
                 <td>
                   <div><b>{r.title}</b></div>
                   <div className="idmono">{r.id}</div>
+                  {/* inline, so the only part of the row that does not open
+                      the run is the chip itself */}
+                  {r.compute && (
+                    <span onClick={(e) => e.stopPropagation()}>
+                      <ComputeChip compute={r.compute} />
+                    </span>
+                  )}
                 </td>
                 <td><StatusChip status={r.status} alive={r.alive} heartbeatAt={r.heartbeat_at} /></td>
                 <td><VerdictChip verdict={r.verdict} /></td>

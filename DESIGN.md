@@ -90,6 +90,11 @@ author-asserted one.
   `invocation` (argv, cwd, entrypoint, allowlisted env — redacted),
   `env_lock_ref` (lockfile *inside* the snapshot commit), `data_refs`
   (`{uri, fingerprint, role}`), `seed`, `hardware`.
+- `compute` — where it *runs*, when that is not the machine that started it
+  (§9): `{system, job_id, url, host, note}`, a pointer and nothing more.
+  ml-party integrates with no job system and polls none; the field exists so
+  a run submitted to a queue stays findable, and so the launcher's hardware
+  is never recorded as the run's.
 - `result` at finalize: `summary`, `verdict ∈ {confirmed, refuted,
   inconclusive}`, headline `metrics` (knowledge — indexed and searchable;
   the step *series* is telemetry in the per-run journal, not the graph),
@@ -308,6 +313,21 @@ Local mode is the degenerate case L = C = S.
   code snapshot + intent at `run_start`; `attach()` on the compute host (C)
   patches env lock, hardware, and invocation onto the run. More accurate
   locally too (the launcher shell ≠ the training interpreter).
+- **The compute reference** closes the gap the split leaves: between
+  `run_start` on L and `attach()` on C, nothing says where the job went —
+  and a job that never attaches (queued, still pending, crashed before
+  import) would say nothing at all. So a run carries `compute`: the job
+  system, its handle, and the **url a human opens to find the job again**.
+  Declared at `run_start` when already known, registered with
+  `run_set_compute` once the submit command answers with an id (which is
+  *after* start — hence a second call, not a start argument only), or handed
+  to the job over the same env handshake as the run id
+  (`ML_PARTY_COMPUTE_SYSTEM` / `_JOB_ID` / `_URL`) for `attach()` to record
+  from C itself. Deliberately **not** a scheduler integration: ml-party
+  neither submits nor polls, so it stays correct for every job system,
+  including in-house ones it has never heard of. A declared-remote run
+  records **no** hardware at start — the launcher's silicon is a wrong
+  answer, not an approximate one, once the code runs elsewhere.
 - **Heartbeats**: the client lib heartbeats in a background thread;
   UI shows running/stale in near-real-time; the janitor uses heartbeat age,
   not mtime, to stamp `abandoned`.
