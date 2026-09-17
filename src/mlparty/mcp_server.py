@@ -96,8 +96,13 @@ THE WORKFLOW for any ML run the user asks you to track:
    environment (through the submit command's env/--env flag), or the run gets
    no metrics; export ML_PARTY_COMPUTE_SYSTEM / ML_PARTY_COMPUTE_JOB_ID /
    ML_PARTY_COMPUTE_URL there too and attach() records the reference from the
-   compute host itself. A remote run carries NO hardware until it attaches —
-   this machine's specs are not the ones that matter, so they are not stored.
+   compute host itself. HARDWARE depends on WHEN you declared it: declared at
+   run_start, nothing is captured and the run carries no hardware until it
+   attaches; declared afterwards with run_set_compute, whatever run_start
+   already captured stays — and that is THIS machine, not the box the job runs
+   on. Either way attach() replaces it with the compute host's. So never report
+   hardware carrying captured_by="start" as the run's compute; it is the
+   launcher's view, and for a remote run it is the wrong machine.
 4. While it runs you may also log from your side: run_log_metric,
    run_log_artifact (checkpoints, plots, audio go to the artifact store).
 5. AFTER completion, finalize through the contract — run_finalize(method=how
@@ -354,7 +359,8 @@ def build_server(root: Path | str) -> MCPServer:
         derives_from (run ids) declares lineage — it becomes both a graph edge and the
         snapshot commit's parent. compute={system, job_id?, url?, host?, note?} declares
         that the job runs ELSEWHERE (see run_set_compute) — pass it when you already
-        know, and no local hardware is recorded. Returns run_id, the commit, a snapshot
+        know, and THIS machine's hardware is not captured at all (declaring it later
+        instead leaves the capture in place, labelled as the launcher's view). Returns run_id, the commit, a snapshot
         report (check BOTH directions: was anything important excluded, and did anything
         land in it that should not be in the store?), and hints. Launch the training with
         env ML_PARTY_STORE=<the store_root this returns> and ML_PARTY_RUN=<run_id>, so
@@ -387,8 +393,11 @@ def build_server(root: Path | str) -> MCPServer:
         fields omitted keep — so call it again as more becomes known (submitted →
         queued → the dashboard URL appears). ml-party never polls the job system:
         this is a pointer, and the run's status still comes from run_finalize /
-        run_fail. Hardware for a remote run arrives from mlparty.attach() on the
-        compute host; the launcher's own hardware is never recorded for it.
+        run_fail. This call does NOT touch hardware: whatever run_start captured
+        stays, labelled captured_by="start" — the launcher's machine, not the
+        one the job runs on — until mlparty.attach() replaces it with the compute
+        host's. (Pass compute to run_start instead and nothing is captured at
+        all.) Do not report start-captured hardware as a remote run's compute.
 
         The launcher can set it instead of you: export ML_PARTY_COMPUTE_SYSTEM /
         ML_PARTY_COMPUTE_JOB_ID / ML_PARTY_COMPUTE_URL next to ML_PARTY_RUN and

@@ -328,7 +328,10 @@ class MlParty:
             env_lock_ref=capture.ENV_LOCK_PATH,
             # the launcher's view is a decent proxy for the compute only when
             # they are the same machine; once the job runs elsewhere it is just
-            # a wrong answer, so leave it for attach() on the compute host
+            # a wrong answer, so leave it for attach() on the compute host.
+            # Only skipped when the caller declares compute HERE — run_set_compute
+            # later leaves an existing capture alone (captured_by marks it as the
+            # launcher's view; deleting it would lose a labelled fact)
             hardware=(None if compute_ref is not None
                       else capture.capture_hardware(captured_by="start")),
             compute=compute_ref,

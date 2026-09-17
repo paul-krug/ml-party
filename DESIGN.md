@@ -94,7 +94,8 @@ author-asserted one.
   (§9): `{system, job_id, url, host, note}`, a pointer and nothing more.
   ml-party integrates with no job system and polls none; the field exists so
   a run submitted to a queue stays findable, and so the launcher's hardware
-  is never recorded as the run's.
+  is not captured as the run's when the run is declared remote up front
+  (§9 — `hardware.captured_by` distinguishes the two views either way).
 - `result` at finalize: `summary`, `verdict ∈ {confirmed, refuted,
   inconclusive}`, headline `metrics` (knowledge — indexed and searchable;
   the step *series* is telemetry in the per-run journal, not the graph),
@@ -325,9 +326,14 @@ Local mode is the degenerate case L = C = S.
   (`ML_PARTY_COMPUTE_SYSTEM` / `_JOB_ID` / `_URL`) for `attach()` to record
   from C itself. Deliberately **not** a scheduler integration: ml-party
   neither submits nor polls, so it stays correct for every job system,
-  including in-house ones it has never heard of. A declared-remote run
-  records **no** hardware at start — the launcher's silicon is a wrong
-  answer, not an approximate one, once the code runs elsewhere.
+  including in-house ones it has never heard of. Declaring `compute` **at
+  `run_start`** skips hardware capture outright: the launcher's silicon is a
+  wrong answer, not an approximate one, once the code runs elsewhere.
+  Declaring it later does not retract the capture — `captured_by` already
+  marks it as the launcher's view, and deleting an honestly-labelled reading
+  to satisfy an invariant would trade a *labelled* fact for no fact at all.
+  So the rule is "never capture what is known to be wrong", not "a remote run
+  has no hardware".
 - **Heartbeats**: the client lib heartbeats in a background thread;
   UI shows running/stale in near-real-time; the janitor uses heartbeat age,
   not mtime, to stamp `abandoned`.

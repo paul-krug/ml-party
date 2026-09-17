@@ -208,8 +208,9 @@ class RunNode(NodeBase):
     seed: int | None = None
     hardware: Hardware | None = None
     # where it runs, when that is not the machine that started it (§9); None
-    # means "here". Declared at start, or registered once the job system
-    # answers with a handle — hardware then arrives from the compute host.
+    # means "here". Declared at start (which also skips hardware capture), or
+    # registered once the job system answers with a handle (which leaves any
+    # capture alone) — either way attach() then reports the compute host's.
     compute: ComputeRef | None = None
     started_at: datetime = Field(default_factory=utcnow)
     ended_at: datetime | None = None

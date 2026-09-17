@@ -254,3 +254,19 @@ def test_a_remote_run_is_findable_by_its_job_handle(mlp):
     mlp.run_set_compute(run_id, system="jobpool", job_id="4711")
     hits = mlp.graph_query("jobpool 4711", mode="lexical", limit=5)["results"]
     assert any(h["id"] == run_id for h in hits)
+
+
+def test_the_two_remote_paths_differ_on_hardware_exactly_as_documented(mlp):
+    """Declaring compute AT start skips hardware capture; declaring it later
+    leaves what was already captured in place, labelled as the launcher's view
+    rather than deleted. The agent-facing text in mcp_server.py states this
+    distinction, so pin it — a silent drift makes those strings lie."""
+    later = _start(mlp, title="declared after submitting")["run_id"]
+    mlp.run_set_compute(later, system="jobpool", job_id="4711")
+    hw = mlp.store.get_node(later).hardware
+    assert hw is not None and hw.captured_by == "start", \
+        "run_set_compute must not retract an honestly-labelled capture"
+
+    up_front = _start(mlp, title="declared up front",
+                      compute={"system": "jobpool"})["run_id"]
+    assert mlp.store.get_node(up_front).hardware is None

@@ -61,8 +61,9 @@ if _mlp: _mlp.log_metric("loss", float(loss), step=step)
 
 At `run_start` (the launcher's view): the outer git state, an env lock for
 `python_exe`, hardware (`captured_by: "start"`) — and, **only if you pass
-`source_root`**, a snapshot of the code. Hardware is skipped for a run
-declared remote (below): this machine's specs are not that run's specs.
+`source_root`**, a snapshot of the code. Hardware capture is skipped entirely
+when you declare remote compute *in the same call* (below): this machine's
+specs are not that run's specs.
 
 Code capture is deliberately explicit, because a snapshot copies file
 contents into the store and, on a served store, on to everyone who can read
@@ -132,8 +133,15 @@ another machine, this records where the run's *compute* is. A remote run
 usually wants both: the job needs `ML_PARTY_STORE` to reach a store, and
 the store needs a way back to the job.
 
-Hardware for a remote run is recorded by `attach()` on the compute host, not
-at `run_start` — until the job attaches, the run honestly carries none.
+**Hardware depends on when you declare it.** Pass `compute` to `run_start`
+and nothing is captured — the run carries no hardware until `attach()` records
+the compute host's. Call `run_set_compute` *afterwards* and whatever
+`run_start` already captured stays: it is this machine, labelled
+`captured_by: "start"`, and the UI shows it as *(launcher's view)* until
+`attach()` replaces it. Nothing is deleted after the fact, so a run that never
+attaches keeps an honestly-labelled launcher reading rather than losing the
+record. Either way, hardware tagged `"start"` on a remote run is the machine
+that *submitted* the job, not the one that ran it.
 
 ## Heartbeats
 

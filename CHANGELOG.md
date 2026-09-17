@@ -25,11 +25,14 @@ history and pull requests; entries land here when they are release-worthy.
   included.
 
 ### Changed
-- A run declared remote **no longer records the launcher's hardware**. The
-  machine that started a job is not the machine that runs it, so its specs
-  were a wrong answer rather than an approximate one; hardware for such a run
-  arrives from `mlparty.attach()` on the compute host, and until then the run
-  honestly carries none.
+- **`run_start` skips hardware capture when the call declares remote
+  `compute`.** The machine that submits a job is not the machine that runs it,
+  so capturing its specs there is a wrong answer rather than an approximate
+  one; hardware then arrives from `mlparty.attach()` on the compute host, and
+  until it does the run carries none. Declaring remote compute *afterwards*
+  with `run_set_compute` leaves an existing capture alone — it stays labelled
+  `captured_by: "start"` (shown as *launcher's view* in the UI) rather than
+  being deleted, so nothing already recorded is lost.
 
 ## [0.2.8] — 2026-09-16
 

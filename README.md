@@ -62,8 +62,8 @@ Core ideas:
   ([deployment guide](https://paul-krug.github.io/ml-party/deploy.html)).
 - **Runs that execute elsewhere stay findable.** Launching from a laptop
   onto a cluster, a queue or a cloud box? `run_set_compute` records the job
-  system, its id and **the link back to the job**, and the run stops
-  claiming your laptop's hardware as its own. A pointer, not an
+  system, its id and **the link back to the job** — and a run that declares it
+  up front stops recording your laptop's hardware as its own. A pointer, not an
   integration — ml-party submits nothing and polls nothing, so it works with
   any job system, including your in-house one
   ([tracking guide](https://paul-krug.github.io/ml-party/tracking.html#runs-that-execute-somewhere-else)).
