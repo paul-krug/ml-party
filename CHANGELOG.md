@@ -7,6 +7,8 @@ history and pull requests; entries land here when they are release-worthy.
 
 ## [Unreleased]
 
+## [0.2.9] — 2026-09-17
+
 ### Added
 - **Runs can record where they actually execute.** Submitting to a cluster,
   a queue or a cloud box from a laptop used to leave the run pointing at the
